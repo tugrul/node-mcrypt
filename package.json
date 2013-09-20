@@ -1,0 +1,29 @@
+{
+    "name": "mcrypt",
+    "description": "MCrypt bindings",
+    "keywords": ["mcrypt", "crypto"],
+    "homepage": "https://github.com/tugrul/node-mcrypt",
+    "version": "0.0.2",
+    "author": "Tuğrul Topuz <tugrultopuz@gmail.com>",
+    "bugs": {
+        "url": "https://github.com/tugrul/node-mcrypt/issues"
+    },
+    "license": "MIT",
+    "repositories": [
+        {
+            "type": "git",
+            "url": "https://github.com/tugrul/node-mcrypt.git"
+        }
+    ],
+    "scripts": {
+        "install": "node-gyp rebuild --release",
+        "preuninstall": "rm -rf build/*"
+    },
+    "engines": {
+        "node" : ">=0.8.0"
+    },
+    "devDependencies": {
+        "node-gyp" : "*"
+    },
+    "main": "./build/Release/mcrypt"
+}
