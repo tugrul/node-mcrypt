@@ -18,8 +18,6 @@ class MCrypt : public node::ObjectWrap {
         static v8::Handle<v8::Value> Encrypt(const v8::Arguments& args);
         static v8::Handle<v8::Value> Decrypt(const v8::Arguments& args);
         static v8::Handle<v8::Value> Open(const v8::Arguments& args);
-        static v8::Handle<v8::Value> SetState(const v8::Arguments& args);
-        static v8::Handle<v8::Value> GetState(const v8::Arguments& args);
         static v8::Handle<v8::Value> SelfTest(const v8::Arguments& args);
         static v8::Handle<v8::Value> IsBlockAlgorithmMode(const v8::Arguments& args);
         static v8::Handle<v8::Value> IsBlockAlgorithm(const v8::Arguments& args);
@@ -31,6 +29,7 @@ class MCrypt : public node::ObjectWrap {
         static v8::Handle<v8::Value> HasIv(const v8::Arguments& args);
         static v8::Handle<v8::Value> GetAlgorithmName(const v8::Arguments& args);
         static v8::Handle<v8::Value> GetModeName(const v8::Arguments& args);
+        static v8::Handle<v8::Value> GenerateIv(const v8::Arguments& args);
         static v8::Handle<v8::Value> Close(const v8::Arguments& args);
         
         static v8::Handle<v8::Value> GetAlgorithmNames(const v8::Arguments& args);

@@ -1,8 +1,11 @@
 
+#include <cstdlib>
+#include <cstring>
+
 #include <node.h>
 #include <node_buffer.h>
-#include <string.h>
 #include <mcrypt.h>
+
 #include "mcrypt.h"
 
 using namespace v8;
@@ -16,7 +19,7 @@ Handle<Value> MCrypt::New(const Arguments& args) {
     HandleScope scope;
     
     if (args.Length() < 2) {
-        return ThrowException(String::New("Missing parameters. Algorithm and mode should be specified."));
+        return ThrowException(Exception::TypeError(String::New("Missing parameters. Algorithm and mode should be specified.")));
     }
 
     String::AsciiValue algo(args[0]);
@@ -28,7 +31,7 @@ Handle<Value> MCrypt::New(const Arguments& args) {
     obj->mcrypt_ = mcrypt_module_open(*algo, *algoDir, *mode, *modeDir);
     
     if (obj->mcrypt_ == MCRYPT_FAILED) {
-        return ThrowException(String::New("MCrypt module can not open."));
+        return ThrowException(Exception::ReferenceError(String::New("MCrypt module can not open.")));
     }
     
     obj->Wrap(args.This());
@@ -40,13 +43,13 @@ Handle<Value> MCrypt::Encrypt(const Arguments& args) {
     HandleScope scope;
     
     if (args.Length() < 1) {
-        return ThrowException(String::New("Missing parameter. Plaintext should be specified."));
+        return ThrowException(Exception::TypeError(String::New("Missing parameter. Plaintext should be specified.")));
     }
     
     MCrypt* obj = ObjectWrap::Unwrap<MCrypt>(args.This());
     
     if (obj->mcrypt_ == MCRYPT_FAILED) {
-        return ThrowException(String::New("MCrypt module was not open."));
+        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not open.")));
     }
     
     char* text = NULL;
@@ -54,18 +57,15 @@ Handle<Value> MCrypt::Encrypt(const Arguments& args) {
     String::AsciiValue* st;
 
     if (args[0]->IsString()) {
-        Local<String> param = Local<String>::Cast(args[0]);
-        len = param->Length();
-
-        st = new String::AsciiValue(param);
+        st = new String::AsciiValue(args[0]);
         text = **st;
+        len = st->length();
     } else if (node::Buffer::HasInstance(args[0])) {
         text = node::Buffer::Data(args[0]);
         len = node::Buffer::Length(args[0]);
     } else {
-        return ThrowException(String::New("Plaintext has got incorrect type. Should be Buffer or String"));
+        return ThrowException(Exception::TypeError(String::New("Plaintext has got incorrect type. Should be Buffer or String.")));
     }
-
     
     int dataSize = len;
     
@@ -77,14 +77,14 @@ Handle<Value> MCrypt::Encrypt(const Arguments& args) {
     node::Buffer* buffer = node::Buffer::New(dataSize);
     memset(node::Buffer::Data(buffer), 0, dataSize);
     memcpy(node::Buffer::Data(buffer), text, len);
-    
+
     int result = 0;
     
     if ((result = mcrypt_generic(obj->mcrypt_, node::Buffer::Data(buffer), dataSize)) != 0) {
         const char* error = mcrypt_strerror(result);
-        return ThrowException(String::New(error));
+        return ThrowException(Exception::Error(String::New(error)));
     }
-    
+
     return scope.Close(buffer->handle_);
 }
 
@@ -92,32 +92,24 @@ Handle<Value> MCrypt::Decrypt(const Arguments& args) {
     HandleScope scope;
     
     if (args.Length() < 1) {
-        return ThrowException(String::New("Missing parameter. Ciphertext should be specified."));
+        return ThrowException(Exception::TypeError(String::New("Missing parameter. Ciphertext should be specified.")));
     }
     
     MCrypt* obj = ObjectWrap::Unwrap<MCrypt>(args.This());
     
     if (obj->mcrypt_ == MCRYPT_FAILED) {
-        return ThrowException(String::New("MCrypt module was not open."));
+        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not open.")));
     }
     
     char* text = NULL;
     int len = 0;
-    String::AsciiValue* st;
 
-    if (args[0]->IsString()) {
-        Local<String> param = Local<String>::Cast(args[0]);
-        len = param->Length();
-
-        st = new String::AsciiValue(param);
-        text = **st;
-    } else if (node::Buffer::HasInstance(args[0])) {
+    if (node::Buffer::HasInstance(args[0])) {
         text = node::Buffer::Data(args[0]);
         len = node::Buffer::Length(args[0]);
     } else {
-        return ThrowException(String::New("Ciphertext has got incorrect type. Should be Buffer or String"));
+        return ThrowException(Exception::TypeError(String::New("Ciphertext has got incorrect type. Should be Buffer.")));
     }
-
     
     int dataSize = len;
     
@@ -125,7 +117,7 @@ Handle<Value> MCrypt::Decrypt(const Arguments& args) {
         int blockSize = mcrypt_enc_get_block_size(obj->mcrypt_);
         dataSize = (((len - 1) / blockSize) + 1) * blockSize;
     }
-    
+
     node::Buffer* buffer = node::Buffer::New(dataSize);
     memset(node::Buffer::Data(buffer), 0, dataSize);
     memcpy(node::Buffer::Data(buffer), text, len);
@@ -134,7 +126,7 @@ Handle<Value> MCrypt::Decrypt(const Arguments& args) {
     
     if ((result = mdecrypt_generic(obj->mcrypt_, node::Buffer::Data(buffer), dataSize)) != 0) {
         const char* error = mcrypt_strerror(result);
-        return ThrowException(String::New(error));
+        return ThrowException(Exception::Error(String::New(error)));
     }
     
     return scope.Close(buffer->handle_);
@@ -144,73 +136,52 @@ Handle<Value> MCrypt::Open(const Arguments& args) {
     HandleScope scope;
 
     if (args.Length() < 1) {
-        return ThrowException(String::New("Missing parameter. Key should be specified."));
+        return ThrowException(Exception::TypeError(String::New("Missing parameter. Key should be specified.")));
     }
     
     MCrypt* obj = ObjectWrap::Unwrap<MCrypt>(args.This());
     
     if (obj->mcrypt_ == MCRYPT_FAILED) {
-        return ThrowException(String::New("MCrypt module was not open."));
+        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not open.")));
     }
     
-    String::AsciiValue key(args[0]);
-    String::AsciiValue iv(args[1]);
+    char* key = NULL;
+    int keyLen = 0;
+    String::AsciiValue* st1;
+    
+    if (args[0]->IsString()) {
+        st1 = new String::AsciiValue(args[0]);
+        key = **st1;
+        keyLen = st1->length();
+    } else if (node::Buffer::HasInstance(args[0])) {
+        key = node::Buffer::Data(args[0]);
+        keyLen = node::Buffer::Length(args[0]);
+    } else {
+        return ThrowException(Exception::TypeError(String::New("Key has got incorrect type. Should be Buffer or String.")));
+    }
+    
+    char* iv = NULL;
+    String::AsciiValue* st2;
+
+    if (!args[1]->IsUndefined()) {
+        if (args[1]->IsString()) {
+            st2 = new String::AsciiValue(args[1]);
+            iv = **st2;
+        } else if (node::Buffer::HasInstance(args[1])) {
+            iv = node::Buffer::Data(args[1]);
+        } else {
+            return ThrowException(Exception::TypeError(String::New("Iv has got incorrect type. Should be Buffer or String.")));
+        }
+    }
     
     int result = 0;
     
-    if ((result = mcrypt_generic_init(obj->mcrypt_, *key, key.length(), *iv)) < 0) {
+    if ((result = mcrypt_generic_init(obj->mcrypt_, key, keyLen, iv)) < 0) {
         const char* error = mcrypt_strerror(result);
-        return ThrowException(String::New(error));
+        return ThrowException(Exception::Error(String::New(error)));
     }
     
     return scope.Close(Undefined());
-}
-
-Handle<Value> MCrypt::SetState(const Arguments& args) {
-    HandleScope scope;
-    
-    if (args.Length() < 1) {
-        return ThrowException(String::New("Missing parameter. State should be specified."));
-    }
-    
-    MCrypt* obj = ObjectWrap::Unwrap<MCrypt>(args.This());
-    
-    if (obj->mcrypt_ == MCRYPT_FAILED) {
-        return ThrowException(String::New("MCrypt module was not open."));
-    }
-    
-    String::AsciiValue state(args[0]);
-    
-    int result = 0;
-    
-    if ((result = mcrypt_enc_set_state(obj->mcrypt_, *state, state.length())) != 0) {
-        const char* error = mcrypt_strerror(result);
-        return ThrowException(String::New(error));
-    }
-    
-    return scope.Close(Undefined());
-}
-
-Handle<Value> MCrypt::GetState(const Arguments& args) {
-    HandleScope scope;
-    
-    MCrypt* obj = ObjectWrap::Unwrap<MCrypt>(args.This());
-    
-    if (obj->mcrypt_ == MCRYPT_FAILED) {
-        return ThrowException(String::New("MCrypt module was not open."));
-    }
-    
-    char *state = NULL;
-    int len = 0;
-    
-    int result = 0;
-    
-    if ((result = mcrypt_enc_get_state(obj->mcrypt_, state, &len)) != 0) {
-        const char* error = mcrypt_strerror(result);
-        return ThrowException(String::New(error));
-    }
-    
-    return scope.Close(String::New(state, len));
 }
 
 Handle<Value> MCrypt::SelfTest(const Arguments& args) {
@@ -219,12 +190,10 @@ Handle<Value> MCrypt::SelfTest(const Arguments& args) {
     MCrypt* obj = ObjectWrap::Unwrap<MCrypt>(args.This());
 
     if (obj->mcrypt_ == MCRYPT_FAILED) {
-        return ThrowException(String::New("MCrypt module was not open."));
+        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not open.")));
     }
-    
-    int result = 0;
-    
-    if ((result = mcrypt_enc_self_test(obj->mcrypt_)) == 0) {
+
+    if (mcrypt_enc_self_test(obj->mcrypt_) == 0) {
         return scope.Close(True());
     }
     
@@ -237,12 +206,10 @@ Handle<Value> MCrypt::IsBlockAlgorithmMode(const Arguments& args) {
     MCrypt* obj = ObjectWrap::Unwrap<MCrypt>(args.This());
 
     if (obj->mcrypt_ == MCRYPT_FAILED) {
-        return ThrowException(String::New("MCrypt module was not open."));
+        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not open.")));
     }
     
-    int result = 0;
-    
-    if ((result = mcrypt_enc_is_block_algorithm_mode(obj->mcrypt_)) == 1) {
+    if (mcrypt_enc_is_block_algorithm_mode(obj->mcrypt_) == 1) {
         return scope.Close(True());
     }
     
@@ -255,12 +222,10 @@ Handle<Value> MCrypt::IsBlockAlgorithm(const Arguments& args) {
     MCrypt* obj = ObjectWrap::Unwrap<MCrypt>(args.This());
 
     if (obj->mcrypt_ == MCRYPT_FAILED) {
-        return ThrowException(String::New("MCrypt module was not open."));
+        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not open.")));
     }
     
-    int result = 0;
-    
-    if ((result = mcrypt_enc_is_block_algorithm(obj->mcrypt_)) == 1) {
+    if (mcrypt_enc_is_block_algorithm(obj->mcrypt_) == 1) {
         return scope.Close(True());
     }
     
@@ -273,12 +238,10 @@ Handle<Value> MCrypt::IsBlockMode(const Arguments& args) {
     MCrypt* obj = ObjectWrap::Unwrap<MCrypt>(args.This());
 
     if (obj->mcrypt_ == MCRYPT_FAILED) {
-        return ThrowException(String::New("MCrypt module was not open."));
+        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not open.")));
     }
     
-    int result = 0;
-    
-    if ((result = mcrypt_enc_is_block_mode(obj->mcrypt_)) == 1) {
+    if (mcrypt_enc_is_block_mode(obj->mcrypt_) == 1) {
         return scope.Close(True());
     }
     
@@ -291,7 +254,7 @@ Handle<Value> MCrypt::GetBlockSize(const Arguments& args) {
     MCrypt* obj = ObjectWrap::Unwrap<MCrypt>(args.This());
 
     if (obj->mcrypt_ == MCRYPT_FAILED) {
-        return ThrowException(String::New("MCrypt module was not open."));
+        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not open.")));
     }
     
     int blockSize = mcrypt_enc_get_block_size(obj->mcrypt_);
@@ -305,7 +268,7 @@ Handle<Value> MCrypt::GetKeySize(const Arguments& args) {
     MCrypt* obj = ObjectWrap::Unwrap<MCrypt>(args.This());
 
     if (obj->mcrypt_ == MCRYPT_FAILED) {
-        return ThrowException(String::New("MCrypt module was not open."));
+        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not open.")));
     }
     
     int keySize = mcrypt_enc_get_key_size(obj->mcrypt_);
@@ -319,7 +282,7 @@ Handle<Value> MCrypt::GetSupportedKeySizes(const Arguments& args) {
     MCrypt* obj = ObjectWrap::Unwrap<MCrypt>(args.This());
 
     if (obj->mcrypt_ == MCRYPT_FAILED) {
-        return ThrowException(String::New("MCrypt module was not open."));
+        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not open.")));
     }
     
     int count;
@@ -346,7 +309,7 @@ Handle<Value> MCrypt::GetIvSize(const Arguments& args) {
     MCrypt* obj = ObjectWrap::Unwrap<MCrypt>(args.This());
 
     if (obj->mcrypt_ == MCRYPT_FAILED) {
-        return ThrowException(String::New("MCrypt module was not open."));
+        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not open.")));
     }
     
     int ivSize = mcrypt_enc_get_iv_size(obj->mcrypt_);
@@ -360,12 +323,10 @@ Handle<Value> MCrypt::HasIv(const Arguments& args) {
     MCrypt* obj = ObjectWrap::Unwrap<MCrypt>(args.This());
 
     if (obj->mcrypt_ == MCRYPT_FAILED) {
-        return ThrowException(String::New("MCrypt module was not open."));
+        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not open.")));
     }
     
-    int result = 0;
-    
-    if ((result = mcrypt_enc_mode_has_iv(obj->mcrypt_)) == 1) {
+    if (mcrypt_enc_mode_has_iv(obj->mcrypt_) == 1) {
         return scope.Close(True());
     }
     
@@ -378,7 +339,7 @@ Handle<Value> MCrypt::GetAlgorithmName(const Arguments& args) {
     MCrypt* obj = ObjectWrap::Unwrap<MCrypt>(args.This());
 
     if (obj->mcrypt_ == MCRYPT_FAILED) {
-        return ThrowException(String::New("MCrypt module was not open."));
+        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not open.")));
     }
     
     char* name = mcrypt_enc_get_algorithms_name(obj->mcrypt_);
@@ -394,7 +355,7 @@ Handle<Value> MCrypt::GetModeName(const Arguments& args) {
     MCrypt* obj = ObjectWrap::Unwrap<MCrypt>(args.This());
 
     if (obj->mcrypt_ == MCRYPT_FAILED) {
-        return ThrowException(String::New("MCrypt module was not open."));
+        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not open.")));
     }
     
     char* name = mcrypt_enc_get_modes_name(obj->mcrypt_);
@@ -404,20 +365,42 @@ Handle<Value> MCrypt::GetModeName(const Arguments& args) {
     return scope.Close(ret);
 }
 
+Handle<Value> MCrypt::GenerateIv(const Arguments& args) {
+    HandleScope scope;
+    
+    MCrypt* obj = ObjectWrap::Unwrap<MCrypt>(args.This());
+
+    if (obj->mcrypt_ == MCRYPT_FAILED) {
+        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not open.")));
+    }
+    
+    int ivSize = mcrypt_enc_get_iv_size(obj->mcrypt_);
+    
+    node::Buffer* buffer = node::Buffer::New(ivSize);
+    
+    char* iv = node::Buffer::Data(buffer);
+    
+    while(ivSize) {
+        iv[--ivSize] = 255.0 * std::rand() / RAND_MAX;
+    }
+    
+    return scope.Close(buffer->handle_);
+}
+
 Handle<Value> MCrypt::Close(const Arguments& args) {
     HandleScope scope;
     
     MCrypt* obj = ObjectWrap::Unwrap<MCrypt>(args.This());
     
     if (obj->mcrypt_ == MCRYPT_FAILED) {
-        return ThrowException(String::New("MCrypt module was not open."));
+        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not open.")));
     }
     
     int result = 0;
     
     if ((result = mcrypt_generic_deinit(obj->mcrypt_)) < 0) {
         const char* error = mcrypt_strerror(result);
-        return ThrowException(String::New(error));
+        return ThrowException(Exception::Error(String::New(error)));
     }
     
     return scope.Close(Undefined());
@@ -426,14 +409,10 @@ Handle<Value> MCrypt::Close(const Arguments& args) {
 Handle<Value> MCrypt::GetAlgorithmNames(const Arguments& args) {
     HandleScope scope;
     
-    char* path = NULL;
-    if (!args[0]->IsUndefined()) {
-        String::AsciiValue st(args[0]);
-        path = *st;
-    }
+    String::AsciiValue path(args[0]);
     
     int size = 0;
-    char** algos = mcrypt_list_algorithms(path, &size);
+    char** algos = mcrypt_list_algorithms(*path, &size);
     
     Handle<Array> array = Array::New(size);
     
@@ -453,14 +432,10 @@ Handle<Value> MCrypt::GetAlgorithmNames(const Arguments& args) {
 Handle<Value> MCrypt::GetModeNames(const Arguments& args) {
     HandleScope scope;
     
-    char* path = NULL;
-    if (!args[0]->IsUndefined()) {
-        String::AsciiValue st(args[0]);
-        path = *st;
-    }
+    String::AsciiValue path(args[0]);
     
     int size = 0;
-    char** modes = mcrypt_list_modes(path, &size);
+    char** modes = mcrypt_list_modes(*path, &size);
     
     Handle<Array> array = Array::New(size);
     
@@ -477,7 +452,6 @@ Handle<Value> MCrypt::GetModeNames(const Arguments& args) {
 }
 
 void MCrypt::Init(Handle<Object> exports) {
-
     Local<FunctionTemplate> tpl = FunctionTemplate::New(New);
     tpl->SetClassName(String::NewSymbol("MCrypt"));
     tpl->InstanceTemplate()->SetInternalFieldCount(1);
@@ -485,12 +459,9 @@ void MCrypt::Init(Handle<Object> exports) {
     Local<ObjectTemplate> prototype = tpl->PrototypeTemplate();
     
     // prototype
-    
     prototype->Set(String::NewSymbol("encrypt"), FunctionTemplate::New(Encrypt)->GetFunction());
     prototype->Set(String::NewSymbol("decrypt"), FunctionTemplate::New(Decrypt)->GetFunction());
     prototype->Set(String::NewSymbol("open"), FunctionTemplate::New(Open)->GetFunction());
-    prototype->Set(String::NewSymbol("setState"), FunctionTemplate::New(SetState)->GetFunction());
-    prototype->Set(String::NewSymbol("getState"), FunctionTemplate::New(GetState)->GetFunction());
     prototype->Set(String::NewSymbol("selfTest"), FunctionTemplate::New(SelfTest)->GetFunction());
     prototype->Set(String::NewSymbol("isBlockAlgorithmMode"), FunctionTemplate::New(IsBlockAlgorithmMode)->GetFunction());
     prototype->Set(String::NewSymbol("isBlockAlgorithm"), FunctionTemplate::New(IsBlockAlgorithm)->GetFunction());
@@ -502,14 +473,13 @@ void MCrypt::Init(Handle<Object> exports) {
     prototype->Set(String::NewSymbol("hasIv"), FunctionTemplate::New(HasIv)->GetFunction());
     prototype->Set(String::NewSymbol("getAlgorithmName"), FunctionTemplate::New(GetAlgorithmName)->GetFunction());
     prototype->Set(String::NewSymbol("getModeName"), FunctionTemplate::New(GetModeName)->GetFunction());
+    prototype->Set(String::NewSymbol("generateIv"), FunctionTemplate::New(GenerateIv)->GetFunction());
     prototype->Set(String::NewSymbol("close"), FunctionTemplate::New(Close)->GetFunction());
     
     // exports
-
     exports->Set(String::NewSymbol("MCrypt"), Persistent<Function>::New(tpl->GetFunction()));
     exports->Set(String::NewSymbol("getAlgorithmNames"), FunctionTemplate::New(GetAlgorithmNames)->GetFunction());
     exports->Set(String::NewSymbol("getModeNames"), FunctionTemplate::New(GetModeNames)->GetFunction());
-    
 }
 
 NODE_MODULE(mcrypt, MCrypt::Init)
