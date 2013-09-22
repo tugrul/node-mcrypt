@@ -82,7 +82,7 @@ There are some prototype functions to make cipher decipher operations and to ide
 
 #### open(key [, iv])
 
-We are need to `open` with a key for `decrypt` and `encrypt` operations also we should set an iv if required by algorithm in other case `iv` is optional parameter.
+We are need to `open()` with a key for `decrypt()` and `encrypt()` operations also we should set an iv if required by algorithm in other case `iv` is optional parameter.
 `key` and `iv` should be string or Buffer
 
 ```javascript
@@ -94,7 +94,7 @@ desEcb.open('madepass'); // we are set the key
 
 #### encrypt(plaintext) : Buffer
 
-`encrypt` returns a Buffer object that contains ciphertext of `plaintext` parameter. `plaintext` parameter should be `string` or `Buffer`
+`encrypt()` returns a Buffer object that contains ciphertext of `plaintext` parameter. `plaintext` parameter should be `string` or `Buffer`
 
 ```javascript
 var MCrypt = require('mcrypt').MCrypt;
@@ -114,7 +114,7 @@ fkJnIgtiH8nsGDryyuIsmyf5vABMGStlpACfKCTifvA=
 
 #### decrypt(ciphertext) : Buffer
 
-`decrypt` returns a Buffer object that contains plaintext of `ciphertext` parameter. `ciphertext` parameter should be `Buffer`
+`decrypt()` returns a Buffer object that contains plaintext of `ciphertext` parameter. `ciphertext` parameter should be `Buffer`
 
 ```javascript
 var MCrypt = require('mcrypt').MCrypt;
@@ -134,7 +134,7 @@ this is top secret message!
 
 #### close()
 
-`close` function provide to close cipher & decipher session.
+`close()` function provide to close cipher & decipher session.
 
 ```javascript
 var MCrypt = require('mcrypt').MCrypt;
@@ -150,7 +150,7 @@ desEcb.close();
 
 #### generateIv() : Buffer
 
-`generateIv` function generates IV randomly.
+`generateIv()` function generates IV randomly.
 
 ```javascript
 var MCrypt = require('mcrypt').MCrypt;
@@ -167,7 +167,7 @@ console.log(Buffer.concat([iv, ciphertext]).toString('base64'));
 
 #### selfTest() : Boolean
 
-`selfTest` is an utility function to make test algorithm internally and returns boolean value of status
+`selfTest()` is an utility function to make test algorithm internally and returns boolean value of status
 
 ```javascript
 var MCrypt = require('mcrypt').MCrypt;
