@@ -30,7 +30,7 @@ You should start with import the package like
 var mcrypt = require('mcrypt');
 ```
 
-There are 3 exposed common function on the package
+There are 3 exposed common functions on the package
 
 ### getAlgorithmNames([path]) : Array
 
@@ -122,7 +122,7 @@ var MCrypt = require('mcrypt').MCrypt;
 var desEcb = new MCrypt('des', 'ecb');
 desEcb.open('madepass'); // we are set the key
 
-var plaintext = desEcb.decrypt(new Buffer('fkJnIgtiH8nsGDryyuIsmyf5vABMGStlpACfKCTifvA='));
+var plaintext = desEcb.decrypt(new Buffer('fkJnIgtiH8nsGDryyuIsmyf5vABMGStlpACfKCTifvA=', 'base64'));
 console.log(plaintext.toString());
 ```
 
