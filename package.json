@@ -1,6 +1,6 @@
 {
     "name": "mcrypt",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "description": "MCrypt bindings",
     "keywords": ["mcrypt", "crypto"],
     "homepage": "https://github.com/tugrul/node-mcrypt",

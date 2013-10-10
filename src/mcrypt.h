@@ -36,6 +36,9 @@ class MCrypt : public node::ObjectWrap {
         static v8::Handle<v8::Value> GetModeNames(const v8::Arguments& args);
         
         MCRYPT mcrypt_;
+        char* key;
+        int keyLen;
+        char* iv;
 };
 
 #endif  // ~ SRC_NODE_MCRYPT_H_

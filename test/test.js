@@ -170,20 +170,6 @@ describe('MCrypt', function() {
                 });
             });
             
-            describe('close', function(){
-                it('should not throw error', function(){
-                    assert.doesNotThrow(function(){
-                        mc.close();
-                    });
-                });
-                
-                it('should throw an error', function(){
-                    assert.throws(function(){
-                        mc.close();
-                    }, Error, 'there is no error when close again');
-                });
-            });
-            
         });
         
         

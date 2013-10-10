@@ -74,17 +74,33 @@ Handle<Value> MCrypt::Encrypt(const Arguments& args) {
         dataSize = (((len - 1) / blockSize) + 1) * blockSize;
     }
     
-    node::Buffer* buffer = node::Buffer::New(dataSize);
-    memset(node::Buffer::Data(buffer), 0, dataSize);
-    memcpy(node::Buffer::Data(buffer), text, len);
-
+    char* data;
+    data = (char*) malloc(dataSize);
+    
+    memset(data, 0, dataSize);
+    memcpy(data, text, len);
+    
     int result = 0;
     
-    if ((result = mcrypt_generic(obj->mcrypt_, node::Buffer::Data(buffer), dataSize)) != 0) {
+    if ((result = mcrypt_generic_init(obj->mcrypt_, obj->key, obj->keyLen, obj->iv)) < 0) {
         const char* error = mcrypt_strerror(result);
         return ThrowException(Exception::Error(String::New(error)));
     }
-
+    
+    if ((result = mcrypt_generic(obj->mcrypt_, data, dataSize)) != 0) {
+        free(data);
+        const char* error = mcrypt_strerror(result);
+        return ThrowException(Exception::Error(String::New(error)));
+    }
+    
+    if ((result = mcrypt_generic_deinit(obj->mcrypt_)) < 0) {
+        free(data);
+        const char* error = mcrypt_strerror(result);
+        return ThrowException(Exception::Error(String::New(error)));
+    }
+    
+    node::Buffer* buffer = node::Buffer::New(data, dataSize);
+    free(data);
     return scope.Close(buffer->handle_);
 }
 
@@ -118,17 +134,33 @@ Handle<Value> MCrypt::Decrypt(const Arguments& args) {
         dataSize = (((len - 1) / blockSize) + 1) * blockSize;
     }
 
-    node::Buffer* buffer = node::Buffer::New(dataSize);
-    memset(node::Buffer::Data(buffer), 0, dataSize);
-    memcpy(node::Buffer::Data(buffer), text, len);
+    char * data;
+    data = (char*) malloc(dataSize);
+    
+    memset(data, 0, dataSize);
+    memcpy(data, text, len);
     
     int result = 0;
     
-    if ((result = mdecrypt_generic(obj->mcrypt_, node::Buffer::Data(buffer), dataSize)) != 0) {
+    if ((result = mcrypt_generic_init(obj->mcrypt_, obj->key, obj->keyLen, obj->iv)) < 0) {
         const char* error = mcrypt_strerror(result);
         return ThrowException(Exception::Error(String::New(error)));
     }
     
+    if ((result = mdecrypt_generic(obj->mcrypt_, data, dataSize)) != 0) {
+        free(data);
+        const char* error = mcrypt_strerror(result);
+        return ThrowException(Exception::Error(String::New(error)));
+    }
+    
+    if ((result = mcrypt_generic_deinit(obj->mcrypt_)) < 0) {
+        free(data);
+        const char* error = mcrypt_strerror(result);
+        return ThrowException(Exception::Error(String::New(error)));
+    }
+    
+    node::Buffer* buffer = node::Buffer::New(data, dataSize);
+    free(data);
     return scope.Close(buffer->handle_);
 }
 
@@ -144,41 +176,52 @@ Handle<Value> MCrypt::Open(const Arguments& args) {
     if (obj->mcrypt_ == MCRYPT_FAILED) {
         return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not open.")));
     }
-    
-    char* key = NULL;
-    int keyLen = 0;
+
     String::AsciiValue* st1;
     
     if (args[0]->IsString()) {
         st1 = new String::AsciiValue(args[0]);
-        key = **st1;
-        keyLen = st1->length();
+        obj->key = **st1;
+        obj->keyLen = st1->length();
     } else if (node::Buffer::HasInstance(args[0])) {
-        key = node::Buffer::Data(args[0]);
-        keyLen = node::Buffer::Length(args[0]);
+        obj->key = node::Buffer::Data(args[0]);
+        obj->keyLen = node::Buffer::Length(args[0]);
     } else {
         return ThrowException(Exception::TypeError(String::New("Key has got incorrect type. Should be Buffer or String.")));
     }
     
-    char* iv = NULL;
+    int count = 0;
+    int* sizes = mcrypt_enc_get_supported_key_sizes(obj->mcrypt_, &count);
+    
+    bool invalid = true;
+    for (int i = 0; i < count; i++) {
+        if (sizes[i] == obj->keyLen) {
+            invalid = false;
+            break;
+        }
+    }
+    
+    mcrypt_free(sizes);
+    
+    if (invalid) {
+        return ThrowException(Exception::TypeError(String::New("Invalid key size. You can determine key sizes using getSupportedKeySizes()")));
+    }
+
     String::AsciiValue* st2;
 
     if (!args[1]->IsUndefined()) {
         if (args[1]->IsString()) {
             st2 = new String::AsciiValue(args[1]);
-            iv = **st2;
+            obj->iv = **st2;
         } else if (node::Buffer::HasInstance(args[1])) {
-            iv = node::Buffer::Data(args[1]);
+            obj->iv = node::Buffer::Data(args[1]);
         } else {
             return ThrowException(Exception::TypeError(String::New("Iv has got incorrect type. Should be Buffer or String.")));
         }
-    }
-    
-    int result = 0;
-    
-    if ((result = mcrypt_generic_init(obj->mcrypt_, key, keyLen, iv)) < 0) {
-        const char* error = mcrypt_strerror(result);
-        return ThrowException(Exception::Error(String::New(error)));
+        
+        if ((size_t)mcrypt_enc_get_iv_size(obj->mcrypt_) != strlen(obj->iv)) {
+            return ThrowException(Exception::TypeError(String::New("Invalid iv size. You can determine iv size using getIvSize()")));
+        }
     }
     
     return scope.Close(Undefined());
@@ -387,25 +430,6 @@ Handle<Value> MCrypt::GenerateIv(const Arguments& args) {
     return scope.Close(buffer->handle_);
 }
 
-Handle<Value> MCrypt::Close(const Arguments& args) {
-    HandleScope scope;
-    
-    MCrypt* obj = ObjectWrap::Unwrap<MCrypt>(args.This());
-    
-    if (obj->mcrypt_ == MCRYPT_FAILED) {
-        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not open.")));
-    }
-    
-    int result = 0;
-    
-    if ((result = mcrypt_generic_deinit(obj->mcrypt_)) < 0) {
-        const char* error = mcrypt_strerror(result);
-        return ThrowException(Exception::Error(String::New(error)));
-    }
-    
-    return scope.Close(Undefined());
-}
-
 Handle<Value> MCrypt::GetAlgorithmNames(const Arguments& args) {
     HandleScope scope;
     
@@ -474,7 +498,6 @@ void MCrypt::Init(Handle<Object> exports) {
     prototype->Set(String::NewSymbol("getAlgorithmName"), FunctionTemplate::New(GetAlgorithmName)->GetFunction());
     prototype->Set(String::NewSymbol("getModeName"), FunctionTemplate::New(GetModeName)->GetFunction());
     prototype->Set(String::NewSymbol("generateIv"), FunctionTemplate::New(GenerateIv)->GetFunction());
-    prototype->Set(String::NewSymbol("close"), FunctionTemplate::New(Close)->GetFunction());
     
     // exports
     exports->Set(String::NewSymbol("MCrypt"), Persistent<Function>::New(tpl->GetFunction()));

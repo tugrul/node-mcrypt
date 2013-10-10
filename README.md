@@ -132,22 +132,6 @@ Expected result like that
 this is top secret message!
 ```
 
-#### close()
-
-`close()` function provide to close cipher & decipher session.
-
-```javascript
-var MCrypt = require('mcrypt').MCrypt;
-
-var desEcb = new MCrypt('des', 'ecb');
-desEcb.open('madepass'); // we are set the key
-
-var plaintext = desEcb.decrypt(new Buffer('fkJnIgtiH8nsGDryyuIsmyf5vABMGStlpACfKCTifvA='));
-console.log(plaintext.toString());
-
-desEcb.close();
-```
-
 #### generateIv() : Buffer
 
 `generateIv()` function generates IV randomly.
