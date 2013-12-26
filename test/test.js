@@ -74,8 +74,27 @@ describe('MCrypt', function() {
             }, 'there is no error when parameters are correct');
         });
     });
+
+    describe('MCrypt instance (BLOWFISH-ECB)', function() {
+        var mc = new mcrypt.MCrypt('blowfish', 'ecb');
+
+        it('should be an object', function() {
+            assert(typeof mc == 'object', 'there is an object');
+        });
+
+        describe('open', function() {
+            var key = 'typeconfig.sys^_-';
+
+            it('should open without error', function() {
+                assert.doesNotThrow(function() {
+                    mc.validateKeySize(false);
+                    mc.open(key);
+                }, 'there is error when opened with key');
+            });
+        });
+    });
     
-    describe('MCrypt instance', function() {
+    describe('MCrypt instance (DES-ECB)', function() {
         var mc = new mcrypt.MCrypt('des', 'ecb');
         
         it('should be an object', function() {

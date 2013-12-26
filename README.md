@@ -149,6 +149,15 @@ var ciphertext = blowfishCfb.encrypt('sometext');
 console.log(Buffer.concat([iv, ciphertext]).toString('base64'));
 ```
 
+#### validateKeySize(Boolean)
+`validateKeySize()` is a function to disable or enable key size validation on `open()`
+
+```javascript
+var mc = new MCrypt('blowfish', 'ecb');
+mc.validateKeySize(false); // disable key size checking
+mc.open('typeconfig.sys^_-');
+```
+
 #### selfTest() : Boolean
 
 `selfTest()` is an utility function to make test algorithm internally and returns boolean value of status

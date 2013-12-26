@@ -29,6 +29,7 @@ Handle<Value> MCrypt::New(const Arguments& args) {
 
     MCrypt* obj = new MCrypt();
     obj->mcrypt_ = mcrypt_module_open(*algo, *algoDir, *mode, *modeDir);
+    obj->checkKeySize = true;
     
     if (obj->mcrypt_ == MCRYPT_FAILED) {
         return ThrowException(Exception::ReferenceError(String::New("MCrypt module can not open.")));
@@ -189,22 +190,32 @@ Handle<Value> MCrypt::Open(const Arguments& args) {
     } else {
         return ThrowException(Exception::TypeError(String::New("Key has got incorrect type. Should be Buffer or String.")));
     }
-    
-    int count = 0;
-    int* sizes = mcrypt_enc_get_supported_key_sizes(obj->mcrypt_, &count);
-    
-    bool invalid = true;
-    for (int i = 0; i < count; i++) {
-        if (sizes[i] == obj->keyLen) {
-            invalid = false;
-            break;
+
+    if (obj->checkKeySize) {
+        int count = 0;
+        int* sizes = mcrypt_enc_get_supported_key_sizes(obj->mcrypt_, &count);
+
+        bool invalid = true; 
+
+        if (count > 0) {
+            for (int i = 0; i < count; i++) {
+                if (sizes[i] == obj->keyLen) {
+                    invalid = false;
+                    break;
+                }
+            }
+        } else {
+            int size = mcrypt_enc_get_key_size(obj->mcrypt_);
+            if ((size <= 0) || (size == obj->keyLen)) {
+                invalid = false;
+            }
         }
-    }
     
-    mcrypt_free(sizes);
-    
-    if (invalid) {
-        return ThrowException(Exception::TypeError(String::New("Invalid key size. You can determine key sizes using getSupportedKeySizes()")));
+        mcrypt_free(sizes);
+        
+        if (invalid) {
+            return ThrowException(Exception::TypeError(String::New("Invalid key size. You can determine key sizes using getSupportedKeySizes()")));
+        }
     }
 
     String::AsciiValue* st2;
@@ -224,6 +235,20 @@ Handle<Value> MCrypt::Open(const Arguments& args) {
         }
     }
     
+    return scope.Close(Undefined());
+}
+
+Handle<Value> MCrypt::ValidateKeySize(const Arguments& args) {
+    HandleScope scope;
+
+    if(args.Length() == 0) {
+        return scope.Close(Undefined());
+    }
+
+    MCrypt* obj = ObjectWrap::Unwrap<MCrypt>(args.This());
+    Local<Boolean> state = args[0]->ToBoolean();
+    obj->checkKeySize = state->Value();
+
     return scope.Close(Undefined());
 }
 
@@ -486,6 +511,7 @@ void MCrypt::Init(Handle<Object> exports) {
     prototype->Set(String::NewSymbol("encrypt"), FunctionTemplate::New(Encrypt)->GetFunction());
     prototype->Set(String::NewSymbol("decrypt"), FunctionTemplate::New(Decrypt)->GetFunction());
     prototype->Set(String::NewSymbol("open"), FunctionTemplate::New(Open)->GetFunction());
+    prototype->Set(String::NewSymbol("validateKeySize"), FunctionTemplate::New(ValidateKeySize)->GetFunction());
     prototype->Set(String::NewSymbol("selfTest"), FunctionTemplate::New(SelfTest)->GetFunction());
     prototype->Set(String::NewSymbol("isBlockAlgorithmMode"), FunctionTemplate::New(IsBlockAlgorithmMode)->GetFunction());
     prototype->Set(String::NewSymbol("isBlockAlgorithm"), FunctionTemplate::New(IsBlockAlgorithm)->GetFunction());
