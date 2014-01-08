@@ -219,18 +219,21 @@ Handle<Value> MCrypt::Open(const Arguments& args) {
     }
 
     String::AsciiValue* st2;
+    size_t ivLen;
 
     if (!args[1]->IsUndefined()) {
         if (args[1]->IsString()) {
             st2 = new String::AsciiValue(args[1]);
             obj->iv = **st2;
+            ivLen = strlen(obj->iv);
         } else if (node::Buffer::HasInstance(args[1])) {
             obj->iv = node::Buffer::Data(args[1]);
+            ivLen = node::Buffer::Length(args[1]);
         } else {
             return ThrowException(Exception::TypeError(String::New("Iv has got incorrect type. Should be Buffer or String.")));
         }
         
-        if ((size_t)mcrypt_enc_get_iv_size(obj->mcrypt_) != strlen(obj->iv)) {
+        if ((size_t)mcrypt_enc_get_iv_size(obj->mcrypt_) != ivLen) {
             return ThrowException(Exception::TypeError(String::New("Invalid iv size. You can determine iv size using getIvSize()")));
         }
     }
