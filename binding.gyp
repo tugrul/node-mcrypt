@@ -6,7 +6,8 @@
                 "src/mcrypt.cc"
             ],
             "include_dirs": [
-                "/usr/include/"
+                "/usr/include/",
+                "/opt/local/include/"
             ],
             "link_settings": {
                 "libraries": [
