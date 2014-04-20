@@ -13,12 +13,15 @@ class MCrypt : public node::ObjectWrap {
         MCrypt();
         ~MCrypt();
         
+        static v8::Persistent<v8::Function> constructor;
+        
         static v8::Handle<v8::Value> New(const v8::Arguments& args);
         
         static v8::Handle<v8::Value> Encrypt(const v8::Arguments& args);
         static v8::Handle<v8::Value> Decrypt(const v8::Arguments& args);
         static v8::Handle<v8::Value> Open(const v8::Arguments& args);
         static v8::Handle<v8::Value> ValidateKeySize(const v8::Arguments& args);
+        static v8::Handle<v8::Value> ValidateIvSize(const v8::Arguments& args);
         static v8::Handle<v8::Value> SelfTest(const v8::Arguments& args);
         static v8::Handle<v8::Value> IsBlockAlgorithmMode(const v8::Arguments& args);
         static v8::Handle<v8::Value> IsBlockAlgorithm(const v8::Arguments& args);
@@ -41,6 +44,7 @@ class MCrypt : public node::ObjectWrap {
         int keyLen;
         char* iv;
         bool checkKeySize;
+        bool checkIvSize;
 };
 
 #endif  // ~ SRC_NODE_MCRYPT_H_

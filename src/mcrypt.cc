@@ -10,6 +10,8 @@
 
 using namespace v8;
 
+Persistent<Function> MCrypt::constructor;
+
 MCrypt::MCrypt() {};
 MCrypt::~MCrypt() {
     mcrypt_module_close(mcrypt_);
@@ -17,6 +19,12 @@ MCrypt::~MCrypt() {
 
 Handle<Value> MCrypt::New(const Arguments& args) {
     HandleScope scope;
+    
+    if (!args.IsConstructCall()) {
+        const int argc = 2;
+        Local<Value> argv[argc] = {args[0], args[1]};
+        return scope.Close(constructor->NewInstance(argc, argv));
+    }
     
     if (args.Length() < 2) {
         return ThrowException(Exception::TypeError(String::New("Missing parameters. Algorithm and mode should be specified.")));
@@ -30,6 +38,7 @@ Handle<Value> MCrypt::New(const Arguments& args) {
     MCrypt* obj = new MCrypt();
     obj->mcrypt_ = mcrypt_module_open(*algo, *algoDir, *mode, *modeDir);
     obj->checkKeySize = true;
+    obj->checkIvSize = true;
     
     if (obj->mcrypt_ == MCRYPT_FAILED) {
         return ThrowException(Exception::ReferenceError(String::New("MCrypt module can not open.")));
@@ -225,7 +234,7 @@ Handle<Value> MCrypt::Open(const Arguments& args) {
         if (args[1]->IsString()) {
             st2 = new String::AsciiValue(args[1]);
             obj->iv = **st2;
-            ivLen = strlen(obj->iv);
+            ivLen = st2->length();
         } else if (node::Buffer::HasInstance(args[1])) {
             obj->iv = node::Buffer::Data(args[1]);
             ivLen = node::Buffer::Length(args[1]);
@@ -233,8 +242,10 @@ Handle<Value> MCrypt::Open(const Arguments& args) {
             return ThrowException(Exception::TypeError(String::New("Iv has got incorrect type. Should be Buffer or String.")));
         }
         
-        if ((size_t)mcrypt_enc_get_iv_size(obj->mcrypt_) != ivLen) {
-            return ThrowException(Exception::TypeError(String::New("Invalid iv size. You can determine iv size using getIvSize()")));
+        if (obj->checkIvSize) {
+            if ((size_t)mcrypt_enc_get_iv_size(obj->mcrypt_) != ivLen) {
+                return ThrowException(Exception::TypeError(String::New("Invalid iv size. You can determine iv size using getIvSize()")));
+            }
         }
     }
     
@@ -251,6 +262,20 @@ Handle<Value> MCrypt::ValidateKeySize(const Arguments& args) {
     MCrypt* obj = ObjectWrap::Unwrap<MCrypt>(args.This());
     Local<Boolean> state = args[0]->ToBoolean();
     obj->checkKeySize = state->Value();
+
+    return scope.Close(Undefined());
+}
+
+Handle<Value> MCrypt::ValidateIvSize(const Arguments& args) {
+    HandleScope scope;
+
+    if(args.Length() == 0) {
+        return scope.Close(Undefined());
+    }
+
+    MCrypt* obj = ObjectWrap::Unwrap<MCrypt>(args.This());
+    Local<Boolean> state = args[0]->ToBoolean();
+    obj->checkIvSize = state->Value();
 
     return scope.Close(Undefined());
 }
@@ -506,7 +531,7 @@ Handle<Value> MCrypt::GetModeNames(const Arguments& args) {
 void MCrypt::Init(Handle<Object> exports) {
     Local<FunctionTemplate> tpl = FunctionTemplate::New(New);
     tpl->SetClassName(String::NewSymbol("MCrypt"));
-    tpl->InstanceTemplate()->SetInternalFieldCount(1);
+    tpl->InstanceTemplate()->SetInternalFieldCount(6);
     
     Local<ObjectTemplate> prototype = tpl->PrototypeTemplate();
     
@@ -515,6 +540,7 @@ void MCrypt::Init(Handle<Object> exports) {
     prototype->Set(String::NewSymbol("decrypt"), FunctionTemplate::New(Decrypt)->GetFunction());
     prototype->Set(String::NewSymbol("open"), FunctionTemplate::New(Open)->GetFunction());
     prototype->Set(String::NewSymbol("validateKeySize"), FunctionTemplate::New(ValidateKeySize)->GetFunction());
+    prototype->Set(String::NewSymbol("validateIvSize"), FunctionTemplate::New(ValidateIvSize)->GetFunction());
     prototype->Set(String::NewSymbol("selfTest"), FunctionTemplate::New(SelfTest)->GetFunction());
     prototype->Set(String::NewSymbol("isBlockAlgorithmMode"), FunctionTemplate::New(IsBlockAlgorithmMode)->GetFunction());
     prototype->Set(String::NewSymbol("isBlockAlgorithm"), FunctionTemplate::New(IsBlockAlgorithm)->GetFunction());
@@ -529,7 +555,8 @@ void MCrypt::Init(Handle<Object> exports) {
     prototype->Set(String::NewSymbol("generateIv"), FunctionTemplate::New(GenerateIv)->GetFunction());
     
     // exports
-    exports->Set(String::NewSymbol("MCrypt"), Persistent<Function>::New(tpl->GetFunction()));
+    constructor = Persistent<Function>::New(tpl->GetFunction());
+    exports->Set(String::NewSymbol("MCrypt"), constructor);
     exports->Set(String::NewSymbol("getAlgorithmNames"), FunctionTemplate::New(GetAlgorithmNames)->GetFunction());
     exports->Set(String::NewSymbol("getModeNames"), FunctionTemplate::New(GetModeNames)->GetFunction());
 }

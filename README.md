@@ -158,6 +158,15 @@ mc.validateKeySize(false); // disable key size checking
 mc.open('typeconfig.sys^_-');
 ```
 
+#### validateIvSize(Boolean)
+`validateIvSize()` is a function to disable or enable iv size validation on `open()`
+
+```javascript
+var mc = new MCrypt('rijndael-256', 'cbc');
+mc.validateIvSize(false); // disable iv size checking
+mc.open('$verysec$retkey$', 'foobar');
+```
+
 #### selfTest() : Boolean
 
 `selfTest()` is an utility function to make test algorithm internally and returns boolean value of status
