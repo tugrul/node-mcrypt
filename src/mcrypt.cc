@@ -63,7 +63,7 @@ Handle<Value> MCrypt::Encrypt(const Arguments& args) {
     }
     
     char* text = NULL;
-    int len = 0;
+    unsigned long int len = 0;
     String::AsciiValue* st;
 
     if (args[0]->IsString()) {
@@ -77,22 +77,23 @@ Handle<Value> MCrypt::Encrypt(const Arguments& args) {
         return ThrowException(Exception::TypeError(String::New("Plaintext has got incorrect type. Should be Buffer or String.")));
     }
     
-    int dataSize = len;
+    unsigned long int dataSize = len;
     
     if (mcrypt_enc_is_block_algorithm(obj->mcrypt_) == 1) {
         int blockSize = mcrypt_enc_get_block_size(obj->mcrypt_);
-        dataSize = (((len - 1) / blockSize) + 1) * blockSize;
+        dataSize = (((len - 1) / blockSize) + 1) * blockSize;   
     }
-    
+
     char* data;
-    data = (char*) malloc(dataSize);
-    
+    data = (char*) malloc(dataSize + 1);
+
     memset(data, 0, dataSize);
     memcpy(data, text, len);
     
     int result = 0;
     
-    if ((result = mcrypt_generic_init(obj->mcrypt_, obj->key, obj->keyLen, obj->iv)) < 0) {
+    if ((result = mcrypt_generic_init(obj->mcrypt_, (void *) obj->key, obj->keyLen, (void *) obj->iv)) < 0) {
+        free(data);
         const char* error = mcrypt_strerror(result);
         return ThrowException(Exception::Error(String::New(error)));
     }
@@ -108,6 +109,8 @@ Handle<Value> MCrypt::Encrypt(const Arguments& args) {
         const char* error = mcrypt_strerror(result);
         return ThrowException(Exception::Error(String::New(error)));
     }
+    
+    data[dataSize] = 0;
     
     node::Buffer* buffer = node::Buffer::New(data, dataSize);
     free(data);
@@ -128,7 +131,7 @@ Handle<Value> MCrypt::Decrypt(const Arguments& args) {
     }
     
     char* text = NULL;
-    int len = 0;
+    unsigned long int len = 0;
 
     if (node::Buffer::HasInstance(args[0])) {
         text = node::Buffer::Data(args[0]);
@@ -137,7 +140,7 @@ Handle<Value> MCrypt::Decrypt(const Arguments& args) {
         return ThrowException(Exception::TypeError(String::New("Ciphertext has got incorrect type. Should be Buffer.")));
     }
     
-    int dataSize = len;
+    unsigned long int dataSize = len;
     
     if (mcrypt_enc_is_block_algorithm(obj->mcrypt_) == 1) {
         int blockSize = mcrypt_enc_get_block_size(obj->mcrypt_);
@@ -145,14 +148,14 @@ Handle<Value> MCrypt::Decrypt(const Arguments& args) {
     }
 
     char * data;
-    data = (char*) malloc(dataSize);
+    data = (char*) malloc(dataSize + 1);
     
     memset(data, 0, dataSize);
     memcpy(data, text, len);
     
     int result = 0;
     
-    if ((result = mcrypt_generic_init(obj->mcrypt_, obj->key, obj->keyLen, obj->iv)) < 0) {
+    if ((result = mcrypt_generic_init(obj->mcrypt_, (void *) obj->key, obj->keyLen, (void *) obj->iv)) < 0) {
         const char* error = mcrypt_strerror(result);
         return ThrowException(Exception::Error(String::New(error)));
     }
@@ -168,7 +171,9 @@ Handle<Value> MCrypt::Decrypt(const Arguments& args) {
         const char* error = mcrypt_strerror(result);
         return ThrowException(Exception::Error(String::New(error)));
     }
-    
+
+    data[dataSize] = 0;
+
     node::Buffer* buffer = node::Buffer::New(data, dataSize);
     free(data);
     return scope.Close(buffer->handle_);
