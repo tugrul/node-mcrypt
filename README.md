@@ -30,7 +30,7 @@ You should start with import the package like
 var mcrypt = require('mcrypt');
 ```
 
-There are 3 exposed common functions on the package
+There are 3 exposed common functions in the package. These functions are `getAlgorithmNames()`, `getModeNames()` and `MCrypt()` constructor function. Also there are some functions under the prototype of `MCrypt()` constructor function.
 
 ### getAlgorithmNames([path]) : Array
 
