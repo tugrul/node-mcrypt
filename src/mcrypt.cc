@@ -41,7 +41,7 @@ Handle<Value> MCrypt::New(const Arguments& args) {
     obj->checkIvSize = true;
     
     if (obj->mcrypt_ == MCRYPT_FAILED) {
-        return ThrowException(Exception::ReferenceError(String::New("MCrypt module can not open.")));
+        return ThrowException(Exception::ReferenceError(String::New("MCrypt module can not opened.")));
     }
     
     obj->Wrap(args.This());
@@ -59,7 +59,7 @@ Handle<Value> MCrypt::Encrypt(const Arguments& args) {
     MCrypt* obj = ObjectWrap::Unwrap<MCrypt>(args.This());
     
     if (obj->mcrypt_ == MCRYPT_FAILED) {
-        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not open.")));
+        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not opened.")));
     }
     
     char* text = NULL;
@@ -127,7 +127,7 @@ Handle<Value> MCrypt::Decrypt(const Arguments& args) {
     MCrypt* obj = ObjectWrap::Unwrap<MCrypt>(args.This());
     
     if (obj->mcrypt_ == MCRYPT_FAILED) {
-        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not open.")));
+        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not opened.")));
     }
     
     char* text = NULL;
@@ -189,7 +189,7 @@ Handle<Value> MCrypt::Open(const Arguments& args) {
     MCrypt* obj = ObjectWrap::Unwrap<MCrypt>(args.This());
     
     if (obj->mcrypt_ == MCRYPT_FAILED) {
-        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not open.")));
+        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not opened.")));
     }
 
     String::AsciiValue* st1;
@@ -291,7 +291,7 @@ Handle<Value> MCrypt::SelfTest(const Arguments& args) {
     MCrypt* obj = ObjectWrap::Unwrap<MCrypt>(args.This());
 
     if (obj->mcrypt_ == MCRYPT_FAILED) {
-        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not open.")));
+        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not opened.")));
     }
 
     if (mcrypt_enc_self_test(obj->mcrypt_) == 0) {
@@ -307,7 +307,7 @@ Handle<Value> MCrypt::IsBlockAlgorithmMode(const Arguments& args) {
     MCrypt* obj = ObjectWrap::Unwrap<MCrypt>(args.This());
 
     if (obj->mcrypt_ == MCRYPT_FAILED) {
-        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not open.")));
+        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not opened.")));
     }
     
     if (mcrypt_enc_is_block_algorithm_mode(obj->mcrypt_) == 1) {
@@ -323,7 +323,7 @@ Handle<Value> MCrypt::IsBlockAlgorithm(const Arguments& args) {
     MCrypt* obj = ObjectWrap::Unwrap<MCrypt>(args.This());
 
     if (obj->mcrypt_ == MCRYPT_FAILED) {
-        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not open.")));
+        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not opened.")));
     }
     
     if (mcrypt_enc_is_block_algorithm(obj->mcrypt_) == 1) {
@@ -339,7 +339,7 @@ Handle<Value> MCrypt::IsBlockMode(const Arguments& args) {
     MCrypt* obj = ObjectWrap::Unwrap<MCrypt>(args.This());
 
     if (obj->mcrypt_ == MCRYPT_FAILED) {
-        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not open.")));
+        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not opened.")));
     }
     
     if (mcrypt_enc_is_block_mode(obj->mcrypt_) == 1) {
@@ -355,7 +355,7 @@ Handle<Value> MCrypt::GetBlockSize(const Arguments& args) {
     MCrypt* obj = ObjectWrap::Unwrap<MCrypt>(args.This());
 
     if (obj->mcrypt_ == MCRYPT_FAILED) {
-        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not open.")));
+        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not opened.")));
     }
     
     int blockSize = mcrypt_enc_get_block_size(obj->mcrypt_);
@@ -369,7 +369,7 @@ Handle<Value> MCrypt::GetKeySize(const Arguments& args) {
     MCrypt* obj = ObjectWrap::Unwrap<MCrypt>(args.This());
 
     if (obj->mcrypt_ == MCRYPT_FAILED) {
-        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not open.")));
+        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not opened.")));
     }
     
     int keySize = mcrypt_enc_get_key_size(obj->mcrypt_);
@@ -383,7 +383,7 @@ Handle<Value> MCrypt::GetSupportedKeySizes(const Arguments& args) {
     MCrypt* obj = ObjectWrap::Unwrap<MCrypt>(args.This());
 
     if (obj->mcrypt_ == MCRYPT_FAILED) {
-        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not open.")));
+        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not opened.")));
     }
     
     int count;
@@ -410,7 +410,7 @@ Handle<Value> MCrypt::GetIvSize(const Arguments& args) {
     MCrypt* obj = ObjectWrap::Unwrap<MCrypt>(args.This());
 
     if (obj->mcrypt_ == MCRYPT_FAILED) {
-        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not open.")));
+        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not opened.")));
     }
     
     int ivSize = mcrypt_enc_get_iv_size(obj->mcrypt_);
@@ -424,7 +424,7 @@ Handle<Value> MCrypt::HasIv(const Arguments& args) {
     MCrypt* obj = ObjectWrap::Unwrap<MCrypt>(args.This());
 
     if (obj->mcrypt_ == MCRYPT_FAILED) {
-        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not open.")));
+        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not opened.")));
     }
     
     if (mcrypt_enc_mode_has_iv(obj->mcrypt_) == 1) {
@@ -440,7 +440,7 @@ Handle<Value> MCrypt::GetAlgorithmName(const Arguments& args) {
     MCrypt* obj = ObjectWrap::Unwrap<MCrypt>(args.This());
 
     if (obj->mcrypt_ == MCRYPT_FAILED) {
-        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not open.")));
+        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not opened.")));
     }
     
     char* name = mcrypt_enc_get_algorithms_name(obj->mcrypt_);
@@ -456,7 +456,7 @@ Handle<Value> MCrypt::GetModeName(const Arguments& args) {
     MCrypt* obj = ObjectWrap::Unwrap<MCrypt>(args.This());
 
     if (obj->mcrypt_ == MCRYPT_FAILED) {
-        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not open.")));
+        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not opened.")));
     }
     
     char* name = mcrypt_enc_get_modes_name(obj->mcrypt_);
@@ -472,7 +472,7 @@ Handle<Value> MCrypt::GenerateIv(const Arguments& args) {
     MCrypt* obj = ObjectWrap::Unwrap<MCrypt>(args.This());
 
     if (obj->mcrypt_ == MCRYPT_FAILED) {
-        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not open.")));
+        return ThrowException(Exception::ReferenceError(String::New("MCrypt module was not opened.")));
     }
     
     int ivSize = mcrypt_enc_get_iv_size(obj->mcrypt_);
