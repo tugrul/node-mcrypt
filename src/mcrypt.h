@@ -2,42 +2,59 @@
 #ifndef SRC_NODE_MCRYPT_H_
 #define SRC_NODE_MCRYPT_H_
 
+#include <vector> 
+#include <algorithm> 
+#include <sstream>
+
 #include <node.h>
+#include <node_buffer.h>
 #include <mcrypt.h>
+
+#define MCRYPT_MODULE_ERROR_CHECK(mcrypt) if (mcrypt->mcrypt_ == MCRYPT_FAILED) { \
+        return ThrowException(Exception::ReferenceError(String::New("MCrypt module could not open"))); \
+    }
+
+#define NODE_MCRYPT_METHOD_PROTO(MethodName) static Handle<Value> MethodName(const Arguments& args)
+#define NODE_MCRYPT_METHOD(MethodName) Handle<Value> MCrypt::MethodName(const Arguments& args)
+    
+using namespace v8;
 
 class MCrypt : public node::ObjectWrap {
     public:
-        static void Init(v8::Handle<v8::Object> exports);
+        static void Init(Handle<Object> exports);
     
     private:
-        MCrypt();
+        MCrypt(const Arguments& args);
         ~MCrypt();
+        void open(char* key, size_t keyLen, char* iv);
+        node::Buffer* encrypt(char* plainText, size_t length, int* result);
+        node::Buffer* decrypt(char* plainText, size_t length, int* result);
+        std::vector<int> getKeySizes();
         
-        static v8::Persistent<v8::Function> constructor;
-        
-        static v8::Handle<v8::Value> New(const v8::Arguments& args);
-        
-        static v8::Handle<v8::Value> Encrypt(const v8::Arguments& args);
-        static v8::Handle<v8::Value> Decrypt(const v8::Arguments& args);
-        static v8::Handle<v8::Value> Open(const v8::Arguments& args);
-        static v8::Handle<v8::Value> ValidateKeySize(const v8::Arguments& args);
-        static v8::Handle<v8::Value> ValidateIvSize(const v8::Arguments& args);
-        static v8::Handle<v8::Value> SelfTest(const v8::Arguments& args);
-        static v8::Handle<v8::Value> IsBlockAlgorithmMode(const v8::Arguments& args);
-        static v8::Handle<v8::Value> IsBlockAlgorithm(const v8::Arguments& args);
-        static v8::Handle<v8::Value> IsBlockMode(const v8::Arguments& args);
-        static v8::Handle<v8::Value> GetBlockSize(const v8::Arguments& args);
-        static v8::Handle<v8::Value> GetKeySize(const v8::Arguments& args);
-        static v8::Handle<v8::Value> GetSupportedKeySizes(const v8::Arguments& args);
-        static v8::Handle<v8::Value> GetIvSize(const v8::Arguments& args);
-        static v8::Handle<v8::Value> HasIv(const v8::Arguments& args);
-        static v8::Handle<v8::Value> GetAlgorithmName(const v8::Arguments& args);
-        static v8::Handle<v8::Value> GetModeName(const v8::Arguments& args);
-        static v8::Handle<v8::Value> GenerateIv(const v8::Arguments& args);
-        static v8::Handle<v8::Value> Close(const v8::Arguments& args);
-        
-        static v8::Handle<v8::Value> GetAlgorithmNames(const v8::Arguments& args);
-        static v8::Handle<v8::Value> GetModeNames(const v8::Arguments& args);
+        static Persistent<Function> constructor;
+
+        NODE_MCRYPT_METHOD_PROTO(New);
+        NODE_MCRYPT_METHOD_PROTO(Encrypt);
+        NODE_MCRYPT_METHOD_PROTO(Decrypt);
+        NODE_MCRYPT_METHOD_PROTO(Open);
+        NODE_MCRYPT_METHOD_PROTO(ValidateKeySize);
+        NODE_MCRYPT_METHOD_PROTO(ValidateIvSize);
+        NODE_MCRYPT_METHOD_PROTO(SelfTest);
+        NODE_MCRYPT_METHOD_PROTO(IsBlockAlgorithmMode);
+        NODE_MCRYPT_METHOD_PROTO(IsBlockAlgorithm);
+        NODE_MCRYPT_METHOD_PROTO(IsBlockMode);
+        NODE_MCRYPT_METHOD_PROTO(GetBlockSize);
+        NODE_MCRYPT_METHOD_PROTO(GetKeySize);
+        NODE_MCRYPT_METHOD_PROTO(GetSupportedKeySizes);
+        NODE_MCRYPT_METHOD_PROTO(GetIvSize);
+        NODE_MCRYPT_METHOD_PROTO(HasIv);
+        NODE_MCRYPT_METHOD_PROTO(GetAlgorithmName);
+        NODE_MCRYPT_METHOD_PROTO(GetModeName);
+        NODE_MCRYPT_METHOD_PROTO(GenerateIv);
+        NODE_MCRYPT_METHOD_PROTO(Close);
+
+        NODE_MCRYPT_METHOD_PROTO(GetAlgorithmNames);
+        NODE_MCRYPT_METHOD_PROTO(GetModeNames);
         
         MCRYPT mcrypt_;
         char* key;
@@ -45,6 +62,11 @@ class MCrypt : public node::ObjectWrap {
         char* iv;
         bool checkKeySize;
         bool checkIvSize;
+        
+        String::AsciiValue algo;
+        String::AsciiValue mode;
+        String::AsciiValue algoDir;
+        String::AsciiValue modeDir;
 };
 
 #endif  // ~ SRC_NODE_MCRYPT_H_
