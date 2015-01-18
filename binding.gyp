@@ -7,7 +7,8 @@
             ],
             "include_dirs": [
                 "/usr/include/",
-                "/opt/local/include/"
+                "/opt/local/include/",
+                "/usr/local/Cellar/mcrypt/"
             ],
             "link_settings": {
                 "libraries": [
