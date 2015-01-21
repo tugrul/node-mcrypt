@@ -21,22 +21,33 @@ MCrypt::~MCrypt() {
     mcrypt_module_close(mcrypt_);
 };
 
-node::Buffer* MCrypt::encrypt(char* plainText, size_t length, int* result) {
+node::Buffer* MCrypt::encrypt(const char* plainText, const size_t length, int* result) {
     size_t targetLength = length;
     
+    // determine allocation size if the cipher algorithm is block mode
+    // block mode algorithm needs to fit in modulus of block size
+    // and it needs to padding space if not fit into block size
     if (mcrypt_enc_is_block_algorithm(mcrypt_) == 1) {
-        int blockSize = mcrypt_enc_get_block_size(mcrypt_);
+        size_t blockSize = mcrypt_enc_get_block_size(mcrypt_);
         targetLength = (((length - 1) / blockSize) + 1) * blockSize;   
     }
     
-    char* targetData = new char[targetLength];
-    std::fill_n(targetData, targetLength, 0);
+    char* targetData = new char[targetLength]();
     std::copy(plainText, plainText + length, targetData);
     
+    // create a dummy object to return on fail result
+    node::Buffer* cipherText = node::Buffer::New(1);
     
-    node::Buffer* cipherText = node::Buffer::New(targetData, targetLength); 
+    // copy of the key and iv due to mcrypt_generic_init not accepts 
+    // const char for key and iv. direct passing is not safe because
+    // iv and key could be modified by mcrypt_generic_init in this case
+    char keyBuf[key.length()];
+    key.copy(keyBuf, key.length());
     
-    if ((*result = mcrypt_generic_init(mcrypt_, (void *) key, keyLen, (void *) iv)) < 0) {
+    char ivBuf[iv.length()];
+    key.copy(ivBuf, iv.length());
+    
+    if ((*result = mcrypt_generic_init(mcrypt_, keyBuf, key.length(), ivBuf)) < 0) {
         delete[] targetData;
 
         return cipherText;
@@ -54,50 +65,65 @@ node::Buffer* MCrypt::encrypt(char* plainText, size_t length, int* result) {
         return cipherText;
     }
 
+    cipherText = node::Buffer::New(targetData, targetLength); 
+    
     delete[] targetData;
 
     return cipherText;
 }
 
-node::Buffer* MCrypt::decrypt(char* plainText, size_t length, int* result) {
+node::Buffer* MCrypt::decrypt(const char* cipherText, const size_t length, int* result) {
     size_t targetLength = length;
     
+    // determine allocation size if the cipher algorithm is block mode
+    // block mode algorithm needs to fit in modulus of block size
+    // and it needs to padding space if not fit into block size
     if (mcrypt_enc_is_block_algorithm(mcrypt_) == 1) {
-        int blockSize = mcrypt_enc_get_block_size(mcrypt_);
+        size_t blockSize = mcrypt_enc_get_block_size(mcrypt_);
         targetLength = (((length - 1) / blockSize) + 1) * blockSize;   
     }
     
-    char* targetData = new char[targetLength];
-    std::fill_n(targetData, targetLength, 0);
-    std::copy(plainText, plainText + length, targetData);
+    char* targetData = new char[targetLength]();
+    std::copy(cipherText, cipherText + length, targetData);
     
+    // create a dummy object to return on fail result
+    node::Buffer* plainText = node::Buffer::New(1);
     
-    node::Buffer* cipherText = node::Buffer::New(targetData, targetLength); 
+    // copy of the key and iv due to mcrypt_generic_init not accepts 
+    // const char for key and iv. direct passing is not safe because
+    // iv and key could be modified by mcrypt_generic_init in this case
+    char keyBuf[key.length()];
+    key.copy(keyBuf, key.length());
     
-    if ((*result = mcrypt_generic_init(mcrypt_, (void *) key, keyLen, (void *) iv)) < 0) {
+    char ivBuf[iv.length()];
+    key.copy(ivBuf, iv.length());
+    
+    if ((*result = mcrypt_generic_init(mcrypt_, keyBuf, key.length(), ivBuf)) < 0) {
         delete[] targetData;
 
-        return cipherText;
+        return plainText;
     }
     
-    if ((*result = mcrypt_generic(mcrypt_, targetData, targetLength)) != 0) {
+    if ((*result = mdecrypt_generic(mcrypt_, targetData, targetLength)) != 0) {
         delete[] targetData;
-        
-        return cipherText;
+
+        return plainText;
     }
     
     if ((*result = mcrypt_generic_deinit(mcrypt_)) < 0) {
         delete[] targetData;
         
-        return cipherText;
+        return plainText;
     }
 
+    plainText = node::Buffer::New(targetData, targetLength); 
+    
     delete[] targetData;
 
-    return cipherText;
+    return plainText;
 }
 
-std::vector<int> MCrypt::getKeySizes() {
+std::vector<size_t> MCrypt::getKeySizes() {
     
     int count = 0;
     int* sizes = mcrypt_enc_get_supported_key_sizes(mcrypt_, &count);
@@ -105,19 +131,19 @@ std::vector<int> MCrypt::getKeySizes() {
     if (count <= 0) {
         mcrypt_free(sizes);
 
-        int size = mcrypt_enc_get_key_size(mcrypt_);
+        size_t size = mcrypt_enc_get_key_size(mcrypt_);
 
         if (size > 0) {
-            std::vector<int> keySizes(1);
+            std::vector<size_t> keySizes(1);
             keySizes[0] = size;
             return keySizes;
         }
 
-        std::vector<int> keySizes(0);
+        std::vector<size_t> keySizes(0);
         return keySizes;
     }
 
-    std::vector<int> keySizes(count);
+    std::vector<size_t> keySizes(count);
 
     for (int i = 0; i < count; i++) {
         keySizes[i] = sizes[i];
@@ -163,20 +189,18 @@ NODE_MCRYPT_METHOD(Open) {
     if (args[0]->IsString()) {
         String::Utf8Value value(args[0]);
     
-        mcrypt->key = *value;
-        mcrypt->keyLen = value.length();
+        mcrypt->key = std::string(*value, value.length());
 
     } else if (node::Buffer::HasInstance(args[0])) {
     
-        mcrypt->key = node::Buffer::Data(args[0]);
-        mcrypt->keyLen = node::Buffer::Length(args[0]);
+        mcrypt->key = std::string(node::Buffer::Data(args[0]), node::Buffer::Length(args[0]));
 
     } else {
         return ThrowException(Exception::TypeError(String::New("Key has got incorrect type. Should be Buffer or String.")));
     }
 
     if (mcrypt->checkKeySize) {
-        std::vector<int> keySizes = mcrypt->getKeySizes();
+        std::vector<size_t> keySizes = mcrypt->getKeySizes();
     
         if (keySizes.size() > 0) {
 
@@ -194,7 +218,7 @@ NODE_MCRYPT_METHOD(Open) {
                 
                 serror << keySizes[i];
                 
-                if (keySizes[i] == mcrypt->keyLen) {
+                if (keySizes[i] == mcrypt->key.length()) {
                     invalid = false;
                 }
             }
@@ -218,14 +242,14 @@ NODE_MCRYPT_METHOD(Open) {
     if (args[1]->IsString()) {
         
         String::Utf8Value value(args[1]);
-        mcrypt->iv = *value;
+
         ivLen = value.length();
+        mcrypt->iv = std::string(*value, ivLen);
 
     } else if (node::Buffer::HasInstance(args[1])) {
 
-        mcrypt->iv = node::Buffer::Data(args[1]);
         ivLen = node::Buffer::Length(args[1]);
-
+        mcrypt->iv = std::string(node::Buffer::Data(args[1]), ivLen);
     } else {
         return ThrowException(Exception::TypeError(String::New("Iv has got incorrect type. Should be Buffer or String.")));
     }
@@ -251,7 +275,7 @@ NODE_MCRYPT_METHOD(Encrypt) {
     MCRYPT_MODULE_ERROR_CHECK(mcrypt)
     
     int result = 0;
-    node::Buffer* cipherText; 
+    node::Buffer* cipherText = node::Buffer::New(1); 
 
     if (args[0]->IsString()) {
 
@@ -286,16 +310,16 @@ NODE_MCRYPT_METHOD(Decrypt) {
     MCRYPT_MODULE_ERROR_CHECK(mcrypt)
     
     int result = 0;
-    node::Buffer* cipherText; 
+    node::Buffer* plainText = node::Buffer::New(1); 
 
     if (args[0]->IsString()) {
 
         String::Utf8Value value(args[0]);
-        cipherText = mcrypt->decrypt(*value, value.length(), &result);
+        plainText = mcrypt->decrypt(*value, value.length(), &result);
 
     } else if (node::Buffer::HasInstance(args[0])) {
     
-        cipherText = mcrypt->decrypt(node::Buffer::Data(args[0]), node::Buffer::Length(args[0]), &result);
+        plainText = mcrypt->decrypt(node::Buffer::Data(args[0]), node::Buffer::Length(args[0]), &result);
 
     } else {
         return ThrowException(Exception::TypeError(String::New("Ciphertext has got incorrect type. Should be Buffer or String.")));
@@ -306,7 +330,7 @@ NODE_MCRYPT_METHOD(Decrypt) {
         return ThrowException(Exception::Error(String::New(error)));
     }
     
-    return scope.Close(cipherText->handle_);
+    return scope.Close(plainText->handle_);
 }
 
 NODE_MCRYPT_METHOD(ValidateKeySize) {
@@ -424,7 +448,7 @@ NODE_MCRYPT_METHOD(GetSupportedKeySizes) {
 
     MCRYPT_MODULE_ERROR_CHECK(mcrypt)
     
-    std::vector<int> keySizes = mcrypt->getKeySizes();
+    std::vector<size_t> keySizes = mcrypt->getKeySizes();
 
     Handle<Array> array = Array::New(keySizes.size());
     
