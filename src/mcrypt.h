@@ -26,8 +26,10 @@ class MCrypt : public node::ObjectWrap {
     private:
         MCrypt(const Arguments& args);
         ~MCrypt();
-        node::Buffer* encrypt(const char* plainText, const size_t length, int* result);
-        node::Buffer* decrypt(const char* plainText, const size_t length, int* result);
+        
+        template <int (*modify)(MCRYPT, void *, int)>
+        node::Buffer* transform(const char* plainText, const size_t length, int* result);
+
         std::vector<size_t> getKeySizes();
         
         static Persistent<Function> constructor;

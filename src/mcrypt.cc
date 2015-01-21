@@ -21,7 +21,8 @@ MCrypt::~MCrypt() {
     mcrypt_module_close(mcrypt_);
 };
 
-node::Buffer* MCrypt::encrypt(const char* plainText, const size_t length, int* result) {
+template <int (*modify)(MCRYPT mcrypt, void* target, int length)>
+node::Buffer* MCrypt::transform(const char* plainText, const size_t length, int* result) {
     size_t targetLength = length;
     
     // determine allocation size if the cipher algorithm is block mode
@@ -52,13 +53,13 @@ node::Buffer* MCrypt::encrypt(const char* plainText, const size_t length, int* r
 
         return cipherText;
     }
-    
-    if ((*result = mcrypt_generic(mcrypt_, targetData, targetLength)) != 0) {
+
+    if ((*result = modify(mcrypt_, targetData, targetLength)) != 0) {
         delete[] targetData;
 
         return cipherText;
     }
-    
+
     if ((*result = mcrypt_generic_deinit(mcrypt_)) < 0) {
         delete[] targetData;
 
@@ -70,57 +71,6 @@ node::Buffer* MCrypt::encrypt(const char* plainText, const size_t length, int* r
     delete[] targetData;
 
     return cipherText;
-}
-
-node::Buffer* MCrypt::decrypt(const char* cipherText, const size_t length, int* result) {
-    size_t targetLength = length;
-    
-    // determine allocation size if the cipher algorithm is block mode
-    // block mode algorithm needs to fit in modulus of block size
-    // and it needs to padding space if not fit into block size
-    if (mcrypt_enc_is_block_algorithm(mcrypt_) == 1) {
-        size_t blockSize = mcrypt_enc_get_block_size(mcrypt_);
-        targetLength = (((length - 1) / blockSize) + 1) * blockSize;   
-    }
-    
-    char* targetData = new char[targetLength]();
-    std::copy(cipherText, cipherText + length, targetData);
-    
-    // create a dummy object to return on fail result
-    node::Buffer* plainText = node::Buffer::New(1);
-    
-    // copy of the key and iv due to mcrypt_generic_init not accepts 
-    // const char for key and iv. direct passing is not safe because
-    // iv and key could be modified by mcrypt_generic_init in this case
-    char keyBuf[key.length()];
-    key.copy(keyBuf, key.length());
-    
-    char ivBuf[iv.length()];
-    key.copy(ivBuf, iv.length());
-    
-    if ((*result = mcrypt_generic_init(mcrypt_, keyBuf, key.length(), ivBuf)) < 0) {
-        delete[] targetData;
-
-        return plainText;
-    }
-    
-    if ((*result = mdecrypt_generic(mcrypt_, targetData, targetLength)) != 0) {
-        delete[] targetData;
-
-        return plainText;
-    }
-    
-    if ((*result = mcrypt_generic_deinit(mcrypt_)) < 0) {
-        delete[] targetData;
-        
-        return plainText;
-    }
-
-    plainText = node::Buffer::New(targetData, targetLength); 
-    
-    delete[] targetData;
-
-    return plainText;
 }
 
 std::vector<size_t> MCrypt::getKeySizes() {
@@ -280,11 +230,11 @@ NODE_MCRYPT_METHOD(Encrypt) {
     if (args[0]->IsString()) {
 
         String::Utf8Value value(args[0]);  
-        cipherText = mcrypt->encrypt(*value, value.length(), &result);
+        cipherText = mcrypt->transform<mcrypt_generic>(*value, value.length(), &result);
     
     } else if(node::Buffer::HasInstance(args[0])) {
 
-        cipherText = mcrypt->encrypt(node::Buffer::Data(args[0]), node::Buffer::Length(args[0]), &result); 
+        cipherText = mcrypt->transform<mcrypt_generic>(node::Buffer::Data(args[0]), node::Buffer::Length(args[0]), &result); 
         
     } else {
         return ThrowException(Exception::TypeError(String::New("Plaintext has got incorrect type. Should be Buffer or String.")));
@@ -315,11 +265,11 @@ NODE_MCRYPT_METHOD(Decrypt) {
     if (args[0]->IsString()) {
 
         String::Utf8Value value(args[0]);
-        plainText = mcrypt->decrypt(*value, value.length(), &result);
+        plainText = mcrypt->transform<mdecrypt_generic>(*value, value.length(), &result);
 
     } else if (node::Buffer::HasInstance(args[0])) {
     
-        plainText = mcrypt->decrypt(node::Buffer::Data(args[0]), node::Buffer::Length(args[0]), &result);
+        plainText = mcrypt->transform<mdecrypt_generic>(node::Buffer::Data(args[0]), node::Buffer::Length(args[0]), &result);
 
     } else {
         return ThrowException(Exception::TypeError(String::New("Ciphertext has got incorrect type. Should be Buffer or String.")));
