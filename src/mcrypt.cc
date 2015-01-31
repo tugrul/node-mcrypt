@@ -46,7 +46,7 @@ node::Buffer* MCrypt::transform(const char* plainText, const size_t length, int*
     key.copy(keyBuf, key.length());
     
     char ivBuf[iv.length()];
-    key.copy(ivBuf, iv.length());
+    iv.copy(ivBuf, iv.length());
     
     if ((*result = mcrypt_generic_init(mcrypt_, keyBuf, key.length(), ivBuf)) < 0) {
         delete[] targetData;
