@@ -8,7 +8,8 @@
             "include_dirs": [
                 "/usr/include/",
                 "/opt/local/include/",
-                "/usr/local/Cellar/mcrypt/"
+                "/usr/local/Cellar/mcrypt/",
+                "<!(node -e \"require('nan')\")"
             ],
             "link_settings": {
                 "libraries": [

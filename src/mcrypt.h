@@ -6,17 +6,14 @@
 #include <algorithm> 
 #include <sstream>
 
-#include <node.h>
-#include <node_buffer.h>
+#include <nan.h>
 #include <mcrypt.h>
 
-#define MCRYPT_MODULE_ERROR_CHECK(mcrypt) if (mcrypt->mcrypt_ == MCRYPT_FAILED) { \
-        return ThrowException(Exception::ReferenceError(String::New("MCrypt module could not open"))); \
+#define MCRYPT_MODULE_ERROR_CHECK(mcrypt) \
+    if (mcrypt->mcrypt_ == MCRYPT_FAILED) { \
+        NanThrowError("MCrypt module could not open"); \
     }
 
-#define NODE_MCRYPT_METHOD_PROTO(MethodName) static Handle<Value> MethodName(const Arguments& args)
-#define NODE_MCRYPT_METHOD(MethodName) Handle<Value> MCrypt::MethodName(const Arguments& args)
-    
 using namespace v8;
 
 class MCrypt : public node::ObjectWrap {
@@ -28,34 +25,34 @@ class MCrypt : public node::ObjectWrap {
         ~MCrypt();
         
         template <int (*modify)(MCRYPT, void *, int)>
-        node::Buffer* transform(const char* plainText, const size_t length, int* result);
+        char* transform(const char* plainText, size_t* length, int* result);
 
         std::vector<size_t> getKeySizes();
         
         static Persistent<Function> constructor;
 
-        NODE_MCRYPT_METHOD_PROTO(New);
-        NODE_MCRYPT_METHOD_PROTO(Encrypt);
-        NODE_MCRYPT_METHOD_PROTO(Decrypt);
-        NODE_MCRYPT_METHOD_PROTO(Open);
-        NODE_MCRYPT_METHOD_PROTO(ValidateKeySize);
-        NODE_MCRYPT_METHOD_PROTO(ValidateIvSize);
-        NODE_MCRYPT_METHOD_PROTO(SelfTest);
-        NODE_MCRYPT_METHOD_PROTO(IsBlockAlgorithmMode);
-        NODE_MCRYPT_METHOD_PROTO(IsBlockAlgorithm);
-        NODE_MCRYPT_METHOD_PROTO(IsBlockMode);
-        NODE_MCRYPT_METHOD_PROTO(GetBlockSize);
-        NODE_MCRYPT_METHOD_PROTO(GetKeySize);
-        NODE_MCRYPT_METHOD_PROTO(GetSupportedKeySizes);
-        NODE_MCRYPT_METHOD_PROTO(GetIvSize);
-        NODE_MCRYPT_METHOD_PROTO(HasIv);
-        NODE_MCRYPT_METHOD_PROTO(GetAlgorithmName);
-        NODE_MCRYPT_METHOD_PROTO(GetModeName);
-        NODE_MCRYPT_METHOD_PROTO(GenerateIv);
-        NODE_MCRYPT_METHOD_PROTO(Close);
+        static NAN_METHOD(New);
+        static NAN_METHOD(Encrypt);
+        static NAN_METHOD(Decrypt);
+        static NAN_METHOD(Open);
+        static NAN_METHOD(ValidateKeySize);
+        static NAN_METHOD(ValidateIvSize);
+        static NAN_METHOD(SelfTest);
+        static NAN_METHOD(IsBlockAlgorithmMode);
+        static NAN_METHOD(IsBlockAlgorithm);
+        static NAN_METHOD(IsBlockMode);
+        static NAN_METHOD(GetBlockSize);
+        static NAN_METHOD(GetKeySize);
+        static NAN_METHOD(GetSupportedKeySizes);
+        static NAN_METHOD(GetIvSize);
+        static NAN_METHOD(HasIv);
+        static NAN_METHOD(GetAlgorithmName);
+        static NAN_METHOD(GetModeName);
+        static NAN_METHOD(GenerateIv);
+        static NAN_METHOD(Close);
 
-        NODE_MCRYPT_METHOD_PROTO(GetAlgorithmNames);
-        NODE_MCRYPT_METHOD_PROTO(GetModeNames);
+        static NAN_METHOD(GetAlgorithmNames);
+        static NAN_METHOD(GetModeNames);
         
         MCRYPT mcrypt_;
         std::string key;

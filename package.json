@@ -1,6 +1,6 @@
 {
     "name": "mcrypt",
-    "version": "0.0.11",
+    "version": "0.0.12",
     "description": "MCrypt bindings",
     "keywords": ["mcrypt", "crypto"],
     "homepage": "https://github.com/tugrul/node-mcrypt",
@@ -19,6 +19,9 @@
     },
     "engines": {
         "node" : ">=0.8.0"
+    },
+    "dependencies": {
+        "nan": "*"
     },
     "devDependencies": {
         "node-gyp" : "*"
