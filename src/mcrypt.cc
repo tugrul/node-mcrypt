@@ -6,7 +6,7 @@ using namespace v8;
 
 Persistent<Function> MCrypt::constructor;
 
-MCrypt::MCrypt(const Arguments& args): 
+MCrypt::MCrypt(_NAN_METHOD_ARGS_TYPE args): 
     checkKeySize(true), 
     checkIvSize(true),
     algo(args[0]), 
@@ -95,9 +95,10 @@ NAN_METHOD(MCrypt::New) {
     
     if (!args.IsConstructCall()) {
         Local<Value> argv[] = {args[0], args[1], args[2], args[3]};
-        NanReturnValue(constructor->NewInstance(4, argv));
+        Local<Function> cons = NanNew<Function>(constructor);
+        NanReturnValue(cons->NewInstance(4, argv));
     }
-    
+
     if (args.Length() < 2) {
         NanThrowTypeError("Missing parameters. Algorithm and mode should be specified.");
     }
@@ -497,7 +498,7 @@ NAN_METHOD(MCrypt::GetAlgorithmNames) {
     }
     
     for (int i = 0; i < size; i++) {
-        array->Set(i, String::New(algos[i]));
+        array->Set(i, NanNew<String>(algos[i]));
     }
     
     mcrypt_free_p(algos, size);

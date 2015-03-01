@@ -21,7 +21,7 @@ class MCrypt : public node::ObjectWrap {
         static void Init(Handle<Object> exports);
     
     private:
-        MCrypt(const Arguments& args);
+        MCrypt(_NAN_METHOD_ARGS_TYPE args);
         ~MCrypt();
         
         template <int (*modify)(MCRYPT, void *, int)>
@@ -61,10 +61,10 @@ class MCrypt : public node::ObjectWrap {
         bool checkKeySize;
         bool checkIvSize;
         
-        String::AsciiValue algo;
-        String::AsciiValue mode;
-        String::AsciiValue algoDir;
-        String::AsciiValue modeDir;
+        NanAsciiString algo;
+        NanAsciiString mode;
+        NanAsciiString algoDir; 
+        NanAsciiString modeDir;
 };
 
 #endif  // ~ SRC_NODE_MCRYPT_H_
