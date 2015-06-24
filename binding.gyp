@@ -13,7 +13,8 @@
             ],
             "link_settings": {
                 "libraries": [
-                    "-lmcrypt"
+                    "-lmcrypt",
+                    "-L/opt/local/lib/",
                 ]
             }
         }
