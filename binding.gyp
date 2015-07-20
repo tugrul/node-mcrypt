@@ -7,14 +7,15 @@
             ],
             "include_dirs": [
                 "/usr/include/",
-                "/opt/local/include/",
+                "/usr/local/include",
                 "/usr/local/Cellar/mcrypt/",
+                "/opt/local/include/",
                 "<!(node -e \"require('nan')\")"
             ],
             "link_settings": {
                 "libraries": [
                     "-lmcrypt",
-                    "-L/opt/local/lib/",
+                    "-L/opt/local/lib/ -L/usr/local/lib",
                 ]
             }
         }
