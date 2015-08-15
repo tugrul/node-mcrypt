@@ -1,0 +1,3 @@
+[submodule "lib/libmcrypt"]
+	path = lib/libmcrypt
+	url = git@github.com:tugrul/libmcrypt-gyp.git
