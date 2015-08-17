@@ -9,6 +9,7 @@
                 "src/mcrypt.cc"
             ],
             "include_dirs": [
+                "lib/libmcrypt/include/",
                 "<!(node -e \"require('nan')\")"
             ]
         }

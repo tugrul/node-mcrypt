@@ -40,10 +40,10 @@ char* MCrypt::transform(const char* plainText, size_t* length, int* result) {
     // copy of the key and iv due to mcrypt_generic_init not accepts 
     // const char for key and iv. direct passing is not safe because
     // iv and key could be modified by mcrypt_generic_init in this case
-    char keyBuf[key.length()];
+    char *keyBuf = new char[key.length()];
     key.copy(keyBuf, key.length());
-    
-    char ivBuf[iv.length()];
+
+    char *ivBuf = new char[iv.length()];
     iv.copy(ivBuf, iv.length());
     
     if ((*result = mcrypt_generic_init(mcrypt_, keyBuf, key.length(), ivBuf)) < 0) {
@@ -56,6 +56,8 @@ char* MCrypt::transform(const char* plainText, size_t* length, int* result) {
 
     *result = mcrypt_generic_deinit(mcrypt_);
 
+    delete keyBuf;
+    delete ivBuf;
     return targetData;
 }
 
