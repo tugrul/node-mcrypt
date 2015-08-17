@@ -2,20 +2,6 @@
 
 MCrypt bindings for Node.js
 
-## Dependencies
-
-### Debian / Ubuntu
-
-```
-apt-get install libmcrypt4 libmcrypt-dev
-```
-
-### OSX
-
-```
-brew install mcrypt
-```
-
 ## Install
 
 ```
