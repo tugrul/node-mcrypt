@@ -47,10 +47,14 @@ char* MCrypt::transform(const char* plainText, size_t* length, int* result) {
     iv.copy(ivBuf, iv.length());
     
     if ((*result = mcrypt_generic_init(mcrypt_, keyBuf, key.length(), ivBuf)) < 0) {
+        delete keyBuf;
+        delete ivBuf;
         return targetData;
     }
 
     if ((*result = modify(mcrypt_, targetData, *length)) != 0) {
+        delete keyBuf;
+        delete ivBuf;
         return targetData;
     }
 
