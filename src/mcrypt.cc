@@ -10,11 +10,9 @@ MCrypt::MCrypt(_NAN_METHOD_ARGS_TYPE args):
     checkKeySize(true), 
     checkIvSize(true),
     algo(args[0]), 
-    mode(args[1]), 
-    algoDir(args[2]), 
-    modeDir(args[3]) {
+    mode(args[1]) {
 
-    mcrypt_ = mcrypt_module_open(*algo, *algoDir, *mode, *modeDir);
+    mcrypt_ = mcrypt_module_open(*algo, *mode);
 };
 
 MCrypt::~MCrypt() {

@@ -63,8 +63,6 @@ class MCrypt : public node::ObjectWrap {
         
         NanAsciiString algo;
         NanAsciiString mode;
-        NanAsciiString algoDir; 
-        NanAsciiString modeDir;
 };
 
 #endif  // ~ SRC_NODE_MCRYPT_H_
