@@ -98,9 +98,9 @@ NAN_METHOD(MCrypt::New) {
     NanScope();
     
     if (!args.IsConstructCall()) {
-        Local<Value> argv[] = {args[0], args[1], args[2], args[3]};
+        Local<Value> argv[] = {args[0], args[1]};
         Local<Function> cons = NanNew<Function>(constructor);
-        NanReturnValue(cons->NewInstance(4, argv));
+        NanReturnValue(cons->NewInstance(2, argv));
     }
 
     if (args.Length() < 2) {
@@ -140,6 +140,8 @@ NAN_METHOD(MCrypt::Open) {
         NanThrowTypeError("Key has got incorrect type. Should be Buffer or String.");
     }
 
+    
+    
     if (mcrypt->checkKeySize) {
         std::vector<size_t> keySizes = mcrypt->getKeySizes();
     
