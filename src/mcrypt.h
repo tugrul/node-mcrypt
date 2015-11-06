@@ -11,7 +11,7 @@
 
 #define MCRYPT_MODULE_ERROR_CHECK(mcrypt) \
     if (mcrypt->mcrypt_ == MCRYPT_FAILED) { \
-        NanThrowError("MCrypt module could not open"); \
+        Nan::ThrowError("MCrypt module could not open"); \
     }
 
 using namespace v8;
@@ -21,7 +21,7 @@ class MCrypt : public node::ObjectWrap {
         static void Init(Handle<Object> exports);
     
     private:
-        MCrypt(_NAN_METHOD_ARGS_TYPE args);
+        MCrypt(Nan::NAN_METHOD_ARGS_TYPE args);
         ~MCrypt();
         
         template <int (*modify)(MCRYPT, void *, int)>
@@ -29,7 +29,7 @@ class MCrypt : public node::ObjectWrap {
 
         std::vector<size_t> getKeySizes();
         
-        static Persistent<Function> constructor;
+        static Nan::Persistent<Function> constructor;
 
         static NAN_METHOD(New);
         static NAN_METHOD(Encrypt);
@@ -61,8 +61,8 @@ class MCrypt : public node::ObjectWrap {
         bool checkKeySize;
         bool checkIvSize;
         
-        NanAsciiString algo;
-        NanAsciiString mode;
+        Nan::Utf8String algo;
+        Nan::Utf8String mode;
 };
 
 #endif  // ~ SRC_NODE_MCRYPT_H_
