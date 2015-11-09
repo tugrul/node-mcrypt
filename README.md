@@ -1,4 +1,4 @@
-# node-mcrypt
+# node-mcrypt [![Build Status](https://travis-ci.org/tugrul/node-mcrypt.svg)](https://travis-ci.org/tugrul/node-mcrypt)
 
 MCrypt bindings for Node.js
 

@@ -1,30 +1,35 @@
 {
-    "name": "mcrypt",
-    "version": "0.1.4",
-    "description": "MCrypt bindings",
-    "keywords": ["mcrypt", "crypto"],
-    "homepage": "https://github.com/tugrul/node-mcrypt",
-    "author": "Tuğrul Topuz <tugrultopuz@gmail.com>",
-    "bugs": {
-        "url": "https://github.com/tugrul/node-mcrypt/issues"
-    },
-    "license": "MIT",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/tugrul/node-mcrypt.git"
-    },
-    "scripts": {
-        "install": "node-gyp rebuild --release",
-        "preuninstall": "rm -rf build/*"
-    },
-    "engines": {
-        "node" : ">=0.8.0"
-    },
-    "dependencies": {
-        "nan": "^2.1.0"
-    },
-    "devDependencies": {
-        "node-gyp" : "*"
-    },
-    "main": "./build/Release/mcrypt"
+  "name": "mcrypt",
+  "version": "0.1.4",
+  "description": "MCrypt bindings",
+  "keywords": [
+    "mcrypt",
+    "crypto"
+  ],
+  "homepage": "https://github.com/tugrul/node-mcrypt",
+  "author": "Tuğrul Topuz <tugrultopuz@gmail.com>",
+  "bugs": {
+    "url": "https://github.com/tugrul/node-mcrypt/issues"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tugrul/node-mcrypt.git"
+  },
+  "scripts": {
+    "test": "./node_modules/mocha/bin/mocha test/test.js",
+    "install": "node-gyp rebuild --release",
+    "preuninstall": "rm -rf build/*"
+  },
+  "engines": {
+    "node": ">=0.8.0"
+  },
+  "dependencies": {
+    "nan": "^2.1.0"
+  },
+  "devDependencies": {
+    "mocha": "^2.3.3",
+    "node-gyp": "*"
+  },
+  "main": "./build/Release/mcrypt"
 }
