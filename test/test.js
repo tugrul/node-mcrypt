@@ -49,7 +49,7 @@ describe('MCrypt', function() {
         it('should throw exception without parameters', function() {
             assert.throws(function(){
                 new mcrypt.MCrypt(); // without algo and mode
-            }, TypeError, 'there is a TypeError when parameters are missed');
+            }, Error, 'there is a TypeError when parameters are missed');
         });
         
         it('should throw exception with less parameter', function(){
@@ -61,11 +61,11 @@ describe('MCrypt', function() {
         it('should throw exception with wrong parameters', function() {
             assert.throws(function(){
                 new mcrypt.MCrypt('deso', 'ecb'); // invalid algo name
-            }, ReferenceError, 'there is a ReferenceError when parameters are wrong');
+            }, Error, 'there is a ReferenceError when parameters are wrong');
             
             assert.throws(function(){
                 new mcrypt.MCrypt('des', 'ebo'); // invalid mode name
-            }, ReferenceError, 'there is a ReferenceError when parameters are wrong');
+            }, Error, 'there is a ReferenceError when parameters are wrong');
         });
         
         it('should not throw exception with correct parameters', function() {
