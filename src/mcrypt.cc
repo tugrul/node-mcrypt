@@ -471,10 +471,8 @@ NAN_METHOD(MCrypt::GenerateIv) {
 
 NAN_METHOD(MCrypt::GetAlgorithmNames) {
     
-    Nan::Utf8String path(info[0]);
-    
     int size = 0;
-    char** algos = mcrypt_list_algorithms(*path, &size);
+    char** algos = mcrypt_list_algorithms(&size);
     
     Local<Array> array = Nan::New<Array>(size);
     
@@ -493,10 +491,8 @@ NAN_METHOD(MCrypt::GetAlgorithmNames) {
 
 NAN_METHOD(MCrypt::GetModeNames) {
     
-    Nan::Utf8String path(info[0]);
-    
     int size = 0;
-    char** modes = mcrypt_list_modes(*path, &size);
+    char** modes = mcrypt_list_modes(&size);
     
     Local<Array> array = Nan::New<Array>(size);
     
