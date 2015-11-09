@@ -26,9 +26,9 @@ var mcrypt = require('mcrypt');
 
 There are 3 exposed common functions in the package. These functions are `getAlgorithmNames()`, `getModeNames()` and `MCrypt()` constructor function. Also there are some functions under the prototype of `MCrypt()` constructor function.
 
-### getAlgorithmNames([path]) : Array
+### getAlgorithmNames() : Array
 
-`getAlgorithmNames()` returns an array that contains available algorithm names. `path` parameter to specify special algorithm directory. `path` parameter is not required.
+`getAlgorithmNames()` returns an array that contains available algorithm names.
 
 ```javascript
 var mcrypt = require('mcrypt');
@@ -43,9 +43,9 @@ Expected result like that
 [ 'cast-128', 'gost', 'rijndael-128', 'twofish', 'arcfour', 'cast-256', 'loki97', 'rijndael-192', 'saferplus', 'wake', 'blowfish-compat', 'des', 'rijndael-256', 'serpent', 'xtea', 'blowfish', 'enigma', 'rc2', 'tripledes' ]
 ```
 
-### getModeNames([path]) : Array
+### getModeNames() : Array
 
-`getModeNames()` returns an array that contains available mode names. `path` parameter to specify special mode directory. `path` parameter is not required.
+`getModeNames()` returns an array that contains available mode names.
 
 ```javascript
 var mcrypt = require('mcrypt');
@@ -59,12 +59,11 @@ Expected result like that
 [ 'cbc', 'cfb', 'ctr', 'ecb', 'ncfb', 'nofb', 'ofb', 'stream' ]
 ```
 
-### MCrypt(algorithm, mode [, algorithmDir] [, modeDir]) : Object
+### MCrypt(algorithm, mode) : Object
 
 `MCrypt(algorithm, mode)` is a constructor function to create object for cipher and decipher operations. 
 `algorithm` is a required parameter and one of the values of array returned by `getAlgorithmNames()`. 
 `mode` is required parameter and one of the values of array returned by `getModeNames()`.
-`algorithmDir` and `modeDir` are optional parameters to specify algorithm and mode directories.
 
 ```javascript
 var MCrypt = require('mcrypt').MCrypt;
