@@ -1,6 +1,6 @@
 {
   "name": "mcrypt",
-  "version": "0.1.4",
+  "version": "0.1.6",
   "description": "MCrypt bindings",
   "keywords": [
     "mcrypt",
