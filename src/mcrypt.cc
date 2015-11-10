@@ -239,9 +239,7 @@ NAN_METHOD(MCrypt::Encrypt) {
         Nan::ThrowError(error);
     }
 
-    MaybeLocal<Object> retVal = Nan::NewBuffer(cipherText, length);
-
-    return info.GetReturnValue().Set(retVal.ToLocalChecked());
+    return info.GetReturnValue().Set(Nan::NewBuffer(cipherText, length).ToLocalChecked());
 }
 
 NAN_METHOD(MCrypt::Decrypt) {
@@ -278,9 +276,7 @@ NAN_METHOD(MCrypt::Decrypt) {
         Nan::ThrowError(error);
     }
 
-    MaybeLocal<Object> retVal = Nan::NewBuffer(cipherText, length);
-
-    return info.GetReturnValue().Set(retVal.ToLocalChecked());
+    return info.GetReturnValue().Set(Nan::NewBuffer(cipherText, length).ToLocalChecked());
 }
 
 NAN_METHOD(MCrypt::ValidateKeySize) {
@@ -431,10 +427,7 @@ NAN_METHOD(MCrypt::GetAlgorithmName) {
     MCRYPT_MODULE_ERROR_CHECK(mcrypt)
     
     char* name = mcrypt_enc_get_algorithms_name(mcrypt->mcrypt_);
-    Local<String> ret = Nan::New<String>(name).FromMaybe(Nan::EmptyString());
-    mcrypt_free(name);
-
-    return info.GetReturnValue().Set(ret);
+    return info.GetReturnValue().Set(Nan::New<String>(name).ToLocalChecked());
 }
 
 NAN_METHOD(MCrypt::GetModeName) {
@@ -444,10 +437,7 @@ NAN_METHOD(MCrypt::GetModeName) {
     MCRYPT_MODULE_ERROR_CHECK(mcrypt)
     
     char* name = mcrypt_enc_get_modes_name(mcrypt->mcrypt_);
-    Local<String> ret = Nan::New<String>(name).FromMaybe(Nan::EmptyString());
-    mcrypt_free(name);
-
-    return info.GetReturnValue().Set(ret);
+    return info.GetReturnValue().Set(Nan::New<String>(name).ToLocalChecked());
 }
 
 NAN_METHOD(MCrypt::GenerateIv) {
@@ -457,16 +447,13 @@ NAN_METHOD(MCrypt::GenerateIv) {
     MCRYPT_MODULE_ERROR_CHECK(mcrypt)
     
     int ivSize = mcrypt_enc_get_iv_size(mcrypt->mcrypt_);
-    
-    MaybeLocal<Object> buffer = Nan::NewBuffer(ivSize);
-    
-    char* iv = node::Buffer::Data(buffer.ToLocalChecked());
+    char* iv = new char[ivSize];
     
     while(ivSize) {
         iv[--ivSize] = 255.0 * std::rand() / RAND_MAX;
     }
 
-    return info.GetReturnValue().Set(buffer.ToLocalChecked());
+    return info.GetReturnValue().Set(Nan::NewBuffer(iv, ivSize).ToLocalChecked());
 }
 
 NAN_METHOD(MCrypt::GetAlgorithmNames) {
@@ -480,8 +467,8 @@ NAN_METHOD(MCrypt::GetAlgorithmNames) {
         return info.GetReturnValue().Set(Nan::New<Array>());
     }
     
-    for (int i = 0; i < size; i++) {
-        array->Set(i, Nan::New<String>(algos[i]).FromMaybe(Nan::EmptyString()));
+    for (uint32_t i = 0; i < (uint32_t)size; i++) {
+        array->Set(i, Nan::New<String>(algos[i]).ToLocalChecked());
     }
     
     mcrypt_free_p(algos, size);
@@ -499,8 +486,8 @@ NAN_METHOD(MCrypt::GetModeNames) {
     if (array.IsEmpty())
         return info.GetReturnValue().Set(Nan::New<Array>());
     
-    for (int i = 0; i < size; i++) {
-        array->Set(i, Nan::New<String>(modes[i]).FromMaybe(Nan::EmptyString()));
+    for (uint32_t i = 0; i < (uint32_t)size; i++) {
+        array->Set(i, Nan::New<String>(modes[i]).ToLocalChecked());
     }
     
     mcrypt_free_p(modes, size);
