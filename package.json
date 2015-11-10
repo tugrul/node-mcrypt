@@ -17,7 +17,7 @@
     "url": "https://github.com/tugrul/node-mcrypt.git"
   },
   "scripts": {
-    "test": "./node_modules/mocha/bin/mocha test/test.js",
+    "test": "./node_modules/mocha/bin/mocha test/main.js",
     "install": "node-gyp rebuild --release",
     "preuninstall": "rm -rf build/*"
   },

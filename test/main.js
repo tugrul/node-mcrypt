@@ -125,11 +125,11 @@ describe('MCrypt', function() {
                 });
             });
             
-            describe('selfTest', function(){
-                it('should return true', function(){
-                    assert(mc.selfTest(), 'return value is not true');
-                });
-            });
+            // describe('selfTest', function(){
+            //     it('should return true', function(){
+            //         assert(mc.selfTest(), 'return value is not true');
+            //     });
+            // });
             
             describe('isBlockAlgorithmMode', function(){
                 it('should return true', function(){
