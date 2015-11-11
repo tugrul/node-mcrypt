@@ -1,6 +1,6 @@
 {
   "name": "mcrypt",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "MCrypt bindings",
   "keywords": [
     "mcrypt",
@@ -17,9 +17,8 @@
     "url": "https://github.com/tugrul/node-mcrypt.git"
   },
   "scripts": {
-    "test": "./node_modules/mocha/bin/mocha test/main.js",
-    "install": "node-gyp rebuild --release",
-    "preuninstall": "rm -rf build/*"
+    "test": "mocha",
+    "install": "node-gyp rebuild --release"
   },
   "engines": {
     "node": ">=0.10.16"
