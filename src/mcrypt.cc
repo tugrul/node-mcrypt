@@ -449,8 +449,8 @@ NAN_METHOD(MCrypt::GenerateIv) {
     int ivSize = mcrypt_enc_get_iv_size(mcrypt->mcrypt_);
     char* iv = new char[ivSize];
     
-    while(ivSize) {
-        iv[--ivSize] = 255.0 * std::rand() / RAND_MAX;
+    for (int i = 0; i < ivSize; i++) {
+        iv[i] = 255.0 * std::rand() / RAND_MAX;
     }
 
     return info.GetReturnValue().Set(Nan::NewBuffer(iv, ivSize).ToLocalChecked());

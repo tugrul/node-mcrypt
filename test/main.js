@@ -167,7 +167,13 @@ describe('MCrypt', function() {
             
             describe('getIvSize', function(){
                 it('should equal to iv size of algorithm', function(){
-                    assert.equal(mc.getIvSize(), 8, 'iv size not equals with 8');
+                    assert.equal(mc.getIvSize(), 8, 'iv size not equals to 8');
+                });
+            });
+            
+            describe('generateIv', function(){
+                it('should equal to iv size of algorithm', function(){
+                    assert.equal(mc.generateIv().length, 8, 'iv size not equals to 8');
                 });
             });
             
