@@ -1,5 +1,5 @@
 
-var mcrypt = require('../build/Release/mcrypt');
+var mcrypt = require('..');
 var assert = require('assert');
 
 describe('MCrypt', function() {
