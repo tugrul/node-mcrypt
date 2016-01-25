@@ -1,3 +1,3 @@
 'use strict';
 
-require('./build/Release/mcrypt');
+module.exports = require('./build/Release/mcrypt');
