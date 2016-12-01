@@ -30,12 +30,6 @@ describe('MCrypt instance (BLOWFISH-ECB)', function() {
 
         describe('decrypt', function() {
             it('ciphertext and encrypted plaintext should be same', function(){
-				
-				var result = mc.decrypt(new Buffer(ciphertext, 'base64')).toString().trim();
-				
-				console.log(new Buffer(result));
-				console.log(new Buffer(plaintext));
-				
                 assert.equal(plaintext, result, 'plaintext are not same');
             });
         });
