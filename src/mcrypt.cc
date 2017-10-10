@@ -6,10 +6,10 @@ using namespace v8;
 
 Nan::Persistent<Function> MCrypt::constructor;
 
-MCrypt::MCrypt(Nan::NAN_METHOD_ARGS_TYPE info): 
-    checkKeySize(true), 
+MCrypt::MCrypt(Nan::NAN_METHOD_ARGS_TYPE info):
+    checkKeySize(true),
     checkIvSize(true),
-    algo(info[0]), 
+    algo(info[0]),
     mode(info[1]) {
 
     mcrypt_ = mcrypt_module_open(*algo, *mode);
@@ -21,7 +21,7 @@ MCrypt::~MCrypt() {
 
 
 template <int (*modify)(MCRYPT mcrypt, void* target, int length)>
-char* MCrypt::transform(const char* plainText, size_t* length, int* result) { 
+char* MCrypt::transform(const char* plainText, size_t* length, int* result) {
     const size_t origLength = *length;
 
     // determine allocation size if the cipher algorithm is block mode
@@ -34,8 +34,8 @@ char* MCrypt::transform(const char* plainText, size_t* length, int* result) {
 
     char* targetData = new char[*length]();
     std::copy(plainText, plainText + origLength, targetData);
-    
-    // copy of the key and iv due to mcrypt_generic_init not accepts 
+
+    // copy of the key and iv due to mcrypt_generic_init not accepts
     // const char for key and iv. direct passing is not safe because
     // iv and key could be modified by mcrypt_generic_init in this case
     char *keyBuf = new char[key.length()];
@@ -43,28 +43,28 @@ char* MCrypt::transform(const char* plainText, size_t* length, int* result) {
 
     char *ivBuf = new char[iv.length()];
     iv.copy(ivBuf, iv.length());
-    
+
     if ((*result = mcrypt_generic_init(mcrypt_, keyBuf, key.length(), ivBuf)) < 0) {
-        delete keyBuf;
-        delete ivBuf;
+        delete[] keyBuf;
+        delete[] ivBuf;
         return targetData;
     }
 
     if ((*result = modify(mcrypt_, targetData, *length)) != 0) {
-        delete keyBuf;
-        delete ivBuf;
+        delete[] keyBuf;
+        delete[] ivBuf;
         return targetData;
     }
 
     *result = mcrypt_generic_deinit(mcrypt_);
 
-    delete keyBuf;
-    delete ivBuf;
+    delete[] keyBuf;
+    delete[] ivBuf;
     return targetData;
 }
 
 std::vector<size_t> MCrypt::getKeySizes() {
-    
+
     int count = 0;
     int* sizes = mcrypt_enc_get_supported_key_sizes(mcrypt_, &count);
 
@@ -90,12 +90,12 @@ std::vector<size_t> MCrypt::getKeySizes() {
     }
 
     mcrypt_free(sizes);
-    
+
     return keySizes;
 }
 
 NAN_METHOD(MCrypt::New) {
-    
+
     if (!info.IsConstructCall()) {
         Local<Value> argv[] = {info[0], info[1]};
         Local<Function> cons = Nan::New<Function>(constructor);
@@ -109,7 +109,7 @@ NAN_METHOD(MCrypt::New) {
     MCrypt* mcrypt = new MCrypt(info);
 
     MCRYPT_MODULE_ERROR_CHECK(mcrypt)
-    
+
     mcrypt->Wrap(info.This());
 
     return info.GetReturnValue().Set(info.This());
@@ -120,52 +120,52 @@ NAN_METHOD(MCrypt::Open) {
     if (info.Length() < 1) {
         Nan::ThrowTypeError("Missing parameter. Key should be specified.");
     }
-    
+
     MCrypt* mcrypt = ObjectWrap::Unwrap<MCrypt>(info.This());
-    
+
     MCRYPT_MODULE_ERROR_CHECK(mcrypt)
-    
+
     if (info[0]->IsString()) {
         Nan::Utf8String value(info[0]);
-    
+
         mcrypt->key = std::string(*value, value.length());
 
-    } else if (node::Buffer::HasInstance(info[0])) { 
-    
+    } else if (node::Buffer::HasInstance(info[0])) {
+
         mcrypt->key = std::string(node::Buffer::Data(info[0]), node::Buffer::Length(info[0]));
 
     } else {
         Nan::ThrowTypeError("Key has got incorrect type. Should be Buffer or String.");
     }
 
-    
-    
+
+
     if (mcrypt->checkKeySize) {
         std::vector<size_t> keySizes = mcrypt->getKeySizes();
-    
+
         if (keySizes.size() > 0) {
 
             bool invalid = true;
-            
+
             std::stringstream serror;
-            
+
             serror << "Invalid key size. Available key size are [";
-            
+
             for(size_t i = 0; i < keySizes.size(); i++) {
-                
+
                 if (i != 0) {
                     serror << ", ";
                 }
-                
+
                 serror << keySizes[i];
-                
+
                 if (keySizes[i] == mcrypt->key.length()) {
                     invalid = false;
                 }
             }
 
             serror << "]";
-            
+
             std::string error = serror.str();
 
             if (invalid) {
@@ -181,7 +181,7 @@ NAN_METHOD(MCrypt::Open) {
     size_t ivLen = 0;
 
     if (info[1]->IsString()) {
-        
+
         Nan::Utf8String value(info[1]);
 
         ivLen = value.length();
@@ -200,20 +200,25 @@ NAN_METHOD(MCrypt::Open) {
             Nan::ThrowTypeError("Invalid iv size. You can determine iv size using getIvSize()");
         }
     }
-    
+
     return info.GetReturnValue().SetUndefined();
 }
 
+// Callback function passed to Nan::NewBuffer()
+static void freeCipherText(char *cipherText, void *hint) {
+    delete[] cipherText;
+}
+
 NAN_METHOD(MCrypt::Encrypt) {
-    
+
     if (info.Length() < 1) {
         Nan::ThrowTypeError("Missing parameter. Plaintext should be specified.");
     }
-    
-    MCrypt* mcrypt = ObjectWrap::Unwrap<MCrypt>(info.This()); 
-    
+
+    MCrypt* mcrypt = ObjectWrap::Unwrap<MCrypt>(info.This());
+
     MCRYPT_MODULE_ERROR_CHECK(mcrypt)
-    
+
     int result = 0;
     char* cipherText = {0};
     size_t length = 0;
@@ -228,30 +233,30 @@ NAN_METHOD(MCrypt::Encrypt) {
 
         length = node::Buffer::Length(info[0]);
         cipherText = mcrypt->transform<mcrypt_generic>(node::Buffer::Data(info[0]), &length, &result);
-        
+
     } else {
         Nan::ThrowTypeError("Plaintext has got incorrect type. Should be Buffer or String.");
     }
-    
+
     if (result != 0) {
         const char* error = mcrypt_strerror(result);
         delete[] cipherText;
         Nan::ThrowError(error);
     }
 
-    return info.GetReturnValue().Set(Nan::NewBuffer(cipherText, length).ToLocalChecked());
+    return info.GetReturnValue().Set(Nan::NewBuffer(cipherText, length, freeCipherText, 0).ToLocalChecked());
 }
 
 NAN_METHOD(MCrypt::Decrypt) {
-    
+
     if (info.Length() < 1) {
         Nan::ThrowTypeError("Missing parameter. Plaintext should be specified.");
     }
-    
+
     MCrypt* mcrypt = ObjectWrap::Unwrap<MCrypt>(info.This());
-    
+
     MCRYPT_MODULE_ERROR_CHECK(mcrypt)
-    
+
     int result = 0;
     char* cipherText = {0};
     size_t length = 0;
@@ -269,14 +274,14 @@ NAN_METHOD(MCrypt::Decrypt) {
     } else {
         Nan::ThrowTypeError("Ciphertext has got incorrect type. Should be Buffer or String.");
     }
-    
+
     if (result != 0) {
         const char* error = mcrypt_strerror(result);
         delete[] cipherText;
         Nan::ThrowError(error);
     }
 
-    return info.GetReturnValue().Set(Nan::NewBuffer(cipherText, length).ToLocalChecked());
+    return info.GetReturnValue().Set(Nan::NewBuffer(cipherText, length, freeCipherText, 0).ToLocalChecked());
 }
 
 NAN_METHOD(MCrypt::ValidateKeySize) {
@@ -306,7 +311,7 @@ NAN_METHOD(MCrypt::ValidateIvSize) {
 }
 
 NAN_METHOD(MCrypt::SelfTest) {
-    
+
     MCrypt* mcrypt = ObjectWrap::Unwrap<MCrypt>(info.This());
 
     MCRYPT_MODULE_ERROR_CHECK(mcrypt)
@@ -319,136 +324,136 @@ NAN_METHOD(MCrypt::SelfTest) {
 }
 
 NAN_METHOD(MCrypt::IsBlockAlgorithmMode) {
-    
+
     MCrypt* mcrypt = ObjectWrap::Unwrap<MCrypt>(info.This());
 
     MCRYPT_MODULE_ERROR_CHECK(mcrypt)
-    
+
     if (mcrypt_enc_is_block_algorithm_mode(mcrypt->mcrypt_) == 1) {
         return info.GetReturnValue().Set(Nan::True());
     }
-    
+
     return info.GetReturnValue().Set(Nan::False());
 }
 
 NAN_METHOD(MCrypt::IsBlockAlgorithm) {
-    
+
     MCrypt* mcrypt = ObjectWrap::Unwrap<MCrypt>(info.This());
 
     MCRYPT_MODULE_ERROR_CHECK(mcrypt)
-    
+
     if (mcrypt_enc_is_block_algorithm(mcrypt->mcrypt_) == 1) {
         return info.GetReturnValue().Set(Nan::True());
     }
-    
+
     return info.GetReturnValue().Set(Nan::False());
 }
 
 NAN_METHOD(MCrypt::IsBlockMode) {
-    
+
     MCrypt* mcrypt = ObjectWrap::Unwrap<MCrypt>(info.This());
 
     MCRYPT_MODULE_ERROR_CHECK(mcrypt)
-    
+
     if (mcrypt_enc_is_block_mode(mcrypt->mcrypt_) == 1) {
         return info.GetReturnValue().Set(Nan::True());
     }
-    
+
     return info.GetReturnValue().Set(Nan::False());
 }
 
 NAN_METHOD(MCrypt::GetBlockSize) {
-    
+
     MCrypt* mcrypt = ObjectWrap::Unwrap<MCrypt>(info.This());
 
     MCRYPT_MODULE_ERROR_CHECK(mcrypt)
-    
+
     int blockSize = mcrypt_enc_get_block_size(mcrypt->mcrypt_);
-    
+
     return info.GetReturnValue().Set(Nan::New<Number>(blockSize));
 }
 
 NAN_METHOD(MCrypt::GetKeySize) {
-    
+
     MCrypt* mcrypt = ObjectWrap::Unwrap<MCrypt>(info.This());
 
     MCRYPT_MODULE_ERROR_CHECK(mcrypt)
-    
+
     int keySize = mcrypt_enc_get_key_size(mcrypt->mcrypt_);
 
     return info.GetReturnValue().Set(Nan::New<Number>(keySize));
 }
 
 NAN_METHOD(MCrypt::GetSupportedKeySizes) {
-    
+
     MCrypt* mcrypt = ObjectWrap::Unwrap<MCrypt>(info.This());
 
     MCRYPT_MODULE_ERROR_CHECK(mcrypt)
-    
+
     std::vector<size_t> keySizes = mcrypt->getKeySizes();
 
     Local<Array> array = Nan::New<Array>(keySizes.size());
-    
+
     for (size_t i = 0; i < keySizes.size(); i++) {
         array->Set(i, Nan::New<Number>(keySizes[i]));
     }
-    
+
     return info.GetReturnValue().Set(array);
 }
 
 NAN_METHOD(MCrypt::GetIvSize) {
-    
+
     MCrypt* mcrypt = ObjectWrap::Unwrap<MCrypt>(info.This());
 
     MCRYPT_MODULE_ERROR_CHECK(mcrypt)
-    
+
     int ivSize = mcrypt_enc_get_iv_size(mcrypt->mcrypt_);
-    
+
     return info.GetReturnValue().Set(Nan::New<Number>(ivSize));
 }
 
 NAN_METHOD(MCrypt::HasIv) {
-    
+
     MCrypt* mcrypt = ObjectWrap::Unwrap<MCrypt>(info.This());
 
     MCRYPT_MODULE_ERROR_CHECK(mcrypt)
-    
+
     if (mcrypt_enc_mode_has_iv(mcrypt->mcrypt_) == 1) {
         return info.GetReturnValue().Set(Nan::True());
     }
-    
+
     return info.GetReturnValue().Set(Nan::False());
 }
 
 NAN_METHOD(MCrypt::GetAlgorithmName) {
-    
+
     MCrypt* mcrypt = ObjectWrap::Unwrap<MCrypt>(info.This());
 
     MCRYPT_MODULE_ERROR_CHECK(mcrypt)
-    
+
     char* name = mcrypt_enc_get_algorithms_name(mcrypt->mcrypt_);
     return info.GetReturnValue().Set(Nan::New<String>(name).ToLocalChecked());
 }
 
 NAN_METHOD(MCrypt::GetModeName) {
-    
+
     MCrypt* mcrypt = ObjectWrap::Unwrap<MCrypt>(info.This());
 
     MCRYPT_MODULE_ERROR_CHECK(mcrypt)
-    
+
     char* name = mcrypt_enc_get_modes_name(mcrypt->mcrypt_);
     return info.GetReturnValue().Set(Nan::New<String>(name).ToLocalChecked());
 }
 
 NAN_METHOD(MCrypt::GenerateIv) {
-    
+
     MCrypt* mcrypt = ObjectWrap::Unwrap<MCrypt>(info.This());
 
     MCRYPT_MODULE_ERROR_CHECK(mcrypt)
-    
+
     int ivSize = mcrypt_enc_get_iv_size(mcrypt->mcrypt_);
     char* iv = new char[ivSize];
-    
+
     for (int i = 0; i < ivSize; i++) {
         iv[i] = 255.0 * std::rand() / RAND_MAX;
     }
@@ -457,39 +462,39 @@ NAN_METHOD(MCrypt::GenerateIv) {
 }
 
 NAN_METHOD(MCrypt::GetAlgorithmNames) {
-    
+
     int size = 0;
     char** algos = mcrypt_list_algorithms(&size);
-    
+
     Local<Array> array = Nan::New<Array>(size);
-    
+
     if (array.IsEmpty()) {
         return info.GetReturnValue().Set(Nan::New<Array>());
     }
-    
+
     for (uint32_t i = 0; i < (uint32_t)size; i++) {
         array->Set(i, Nan::New<String>(algos[i]).ToLocalChecked());
     }
-    
+
     mcrypt_free_p(algos, size);
-    
+
     return info.GetReturnValue().Set(array);
 }
 
 NAN_METHOD(MCrypt::GetModeNames) {
-    
+
     int size = 0;
     char** modes = mcrypt_list_modes(&size);
-    
+
     Local<Array> array = Nan::New<Array>(size);
-    
+
     if (array.IsEmpty())
         return info.GetReturnValue().Set(Nan::New<Array>());
-    
+
     for (uint32_t i = 0; i < (uint32_t)size; i++) {
         array->Set(i, Nan::New<String>(modes[i]).ToLocalChecked());
     }
-    
+
     mcrypt_free_p(modes, size);
 
     return info.GetReturnValue().Set(array);
@@ -499,7 +504,7 @@ void MCrypt::Init(Handle<Object> exports) {
 
     Local<FunctionTemplate> tpl = Nan::New<FunctionTemplate>(New);
     tpl->SetClassName(Nan::New("MCrypt").ToLocalChecked());
-    tpl->InstanceTemplate()->SetInternalFieldCount(1); 
+    tpl->InstanceTemplate()->SetInternalFieldCount(1);
 
     // prototype
     Nan::SetPrototypeMethod(tpl, "encrypt", Encrypt);
