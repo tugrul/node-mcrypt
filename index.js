@@ -1,4 +1,3 @@
 'use strict';
-const path = require('path');
 
-module.exports = require(path.join(__dirname, 'build/Release/mcrypt'));
+module.exports = require('./build/Release/mcrypt');
