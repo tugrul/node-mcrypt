@@ -1,6 +1,6 @@
 {
   "name": "mcrypt",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "description": "MCrypt bindings",
   "keywords": [
     "mcrypt",
@@ -28,7 +28,7 @@
   },
   "devDependencies": {
     "mocha": "^2.3.3",
-    "node-gyp": "*"
+    "node-gyp": "^3.6.2"
   },
   "main": "index.js",
   "gypfile": true
