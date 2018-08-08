@@ -99,7 +99,7 @@ NAN_METHOD(MCrypt::New) {
     if (!info.IsConstructCall()) {
         Local<Value> argv[] = {info[0], info[1]};
         Local<Function> cons = Nan::New<Function>(constructor);
-        return info.GetReturnValue().Set(cons->NewInstance(2, argv));
+        return info.GetReturnValue().Set(Nan::NewInstance(cons, 2, argv).ToLocalChecked());
     }
 
     if (info.Length() < 2) {
