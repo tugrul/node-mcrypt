@@ -1,3 +1,7 @@
+
+__This repository not in active maintain state. Please use [cryptian](https://github.com/tugrul/cryptian) library instead of this library.__
+
+
 # node-mcrypt [![Build Status](https://travis-ci.org/tugrul/node-mcrypt.svg)](https://travis-ci.org/tugrul/node-mcrypt)
 
 MCrypt bindings for Node.js
@@ -8,17 +12,6 @@ MCrypt bindings for Node.js
 npm install mcrypt
 ```
 
-## Introduction
-
-Alright! There is already OpenSSL extension bundled with Node.js but there are something wrong with some traditional encryption algorithms on OpenSSL.
-
-I tried to decrypt ciphertext of AES and DES algorithms using OpenSSL but i get the garbage outputs. There are some reasons with OpenSSL like null padding.
-
-Also i saw same issues on the stackoverflow.com. Some people encountered with same problems.
-
-This extension provide the cipher and decipher operations via `libmcrypt` and compatible with Java Crypto and PHP MCrypt consequently.
-
-You should start with import the package like
 
 ```javascript
 var mcrypt = require('mcrypt');
