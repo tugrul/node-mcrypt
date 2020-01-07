@@ -18,7 +18,7 @@ using namespace v8;
 
 class MCrypt : public node::ObjectWrap {
     public:
-        static void Init(Handle<Object> exports);
+        static void Init(Local<Object> exports);
     
     private:
         MCrypt(Nan::NAN_METHOD_ARGS_TYPE args);

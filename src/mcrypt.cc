@@ -291,8 +291,7 @@ NAN_METHOD(MCrypt::ValidateKeySize) {
     }
 
     MCrypt* mcrypt = ObjectWrap::Unwrap<MCrypt>(info.This());
-    Local<Boolean> state = info[0]->ToBoolean();
-    mcrypt->checkKeySize = state->Value();
+    mcrypt->checkKeySize = Nan::Equals(info[0], Nan::True()).FromJust();
 
     return info.GetReturnValue().SetUndefined();
 }
@@ -304,8 +303,7 @@ NAN_METHOD(MCrypt::ValidateIvSize) {
     }
 
     MCrypt* mcrypt = ObjectWrap::Unwrap<MCrypt>(info.This());
-    Local<Boolean> state = info[0]->ToBoolean();
-    mcrypt->checkIvSize = state->Value();
+    mcrypt->checkIvSize = Nan::Equals(info[0], Nan::True()).FromJust();
 
     return info.GetReturnValue().SetUndefined();
 }
@@ -395,7 +393,7 @@ NAN_METHOD(MCrypt::GetSupportedKeySizes) {
     Local<Array> array = Nan::New<Array>(keySizes.size());
 
     for (size_t i = 0; i < keySizes.size(); i++) {
-        array->Set(i, Nan::New<Number>(keySizes[i]));
+	Nan::Set(array, i, Nan::New<Number>(keySizes[i]));
     }
 
     return info.GetReturnValue().Set(array);
@@ -473,7 +471,7 @@ NAN_METHOD(MCrypt::GetAlgorithmNames) {
     }
 
     for (uint32_t i = 0; i < (uint32_t)size; i++) {
-        array->Set(i, Nan::New<String>(algos[i]).ToLocalChecked());
+	Nan::Set(array, i, Nan::New<String>(algos[i]).ToLocalChecked());
     }
 
     mcrypt_free_p(algos, size);
@@ -492,7 +490,7 @@ NAN_METHOD(MCrypt::GetModeNames) {
         return info.GetReturnValue().Set(Nan::New<Array>());
 
     for (uint32_t i = 0; i < (uint32_t)size; i++) {
-        array->Set(i, Nan::New<String>(modes[i]).ToLocalChecked());
+	Nan::Set(array, i, Nan::New<String>(modes[i]).ToLocalChecked());
     }
 
     mcrypt_free_p(modes, size);
@@ -500,7 +498,7 @@ NAN_METHOD(MCrypt::GetModeNames) {
     return info.GetReturnValue().Set(array);
 }
 
-void MCrypt::Init(Handle<Object> exports) {
+void MCrypt::Init(Local<Object> exports) {
 
     Local<FunctionTemplate> tpl = Nan::New<FunctionTemplate>(New);
     tpl->SetClassName(Nan::New("MCrypt").ToLocalChecked());
@@ -526,8 +524,8 @@ void MCrypt::Init(Handle<Object> exports) {
     Nan::SetPrototypeMethod(tpl, "generateIv", GenerateIv);
 
     // exports
-    constructor.Reset(tpl->GetFunction());
-    exports->Set(Nan::New("MCrypt").ToLocalChecked(), tpl->GetFunction());
+    constructor.Reset(Nan::GetFunction(tpl).ToLocalChecked());
+    Nan::Set(exports, Nan::New("MCrypt").ToLocalChecked(), Nan::GetFunction(tpl).ToLocalChecked());
     Nan::SetMethod(exports, "getAlgorithmNames", GetAlgorithmNames);
     Nan::SetMethod(exports, "getModeNames", GetModeNames);
 }
