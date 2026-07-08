@@ -2,7 +2,7 @@
 __This repository not in active maintain state. Please use [cryptian](https://github.com/tugrul/cryptian) library instead of this library.__
 
 
-# node-mcrypt [![Build Status](https://travis-ci.org/tugrul/node-mcrypt.svg)](https://travis-ci.org/tugrul/node-mcrypt)
+# node-mcrypt 
 
 MCrypt bindings for Node.js
 
