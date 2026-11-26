@@ -24,42 +24,38 @@ template <int (*modify)(MCRYPT mcrypt, void* target, int length)>
 char* MCrypt::transform(const char* plainText, size_t* length, int* result) {
     const size_t origLength = *length;
 
-    // determine allocation size if the cipher algorithm is block mode
-    // block mode algorithm needs to fit in modulus of block size
-    // and it needs to padding space if not fit into block size
+    // a block algorithm works on whole blocks: the length goes up to the
+    // next multiple of the block size and the rest is zero bytes.
+    // an empty input stays empty
     if (mcrypt_enc_is_block_algorithm(mcrypt_) == 1) {
         size_t blockSize = mcrypt_enc_get_block_size(mcrypt_);
-        *length = (((*length - 1) / blockSize) + 1) * blockSize;
+        *length = ((*length + blockSize - 1) / blockSize) * blockSize;
     }
 
     char* targetData = new char[*length]();
     std::copy(plainText, plainText + origLength, targetData);
 
-    // copy of the key and iv due to mcrypt_generic_init not accepts
-    // const char for key and iv. direct passing is not safe because
-    // iv and key could be modified by mcrypt_generic_init in this case
-    char *keyBuf = new char[key.length()];
-    key.copy(keyBuf, key.length());
+    // libmcrypt reads as many bytes of iv as the mode uses, however many
+    // open() was given. a shorter iv is filled up with zero bytes, which is
+    // also what libmcrypt takes when it gets no iv
+    std::string ivBuf(iv);
+    const int ivSize = mcrypt_enc_get_iv_size(mcrypt_);
 
-    char *ivBuf = new char[iv.length()];
-    iv.copy(ivBuf, iv.length());
+    if (ivSize > 0 && ivBuf.length() < (size_t)ivSize) {
+        ivBuf.resize(ivSize, '\0');
+    }
 
-    if ((*result = mcrypt_generic_init(mcrypt_, keyBuf, key.length(), ivBuf)) < 0) {
-        delete[] keyBuf;
-        delete[] ivBuf;
+    if ((*result = mcrypt_generic_init(mcrypt_, key.data(), key.length(), ivBuf.data())) < 0) {
         return targetData;
     }
 
     if ((*result = modify(mcrypt_, targetData, *length)) != 0) {
-        delete[] keyBuf;
-        delete[] ivBuf;
+        mcrypt_generic_deinit(mcrypt_);
         return targetData;
     }
 
     *result = mcrypt_generic_deinit(mcrypt_);
 
-    delete[] keyBuf;
-    delete[] ivBuf;
     return targetData;
 }
 
@@ -99,16 +95,26 @@ NAN_METHOD(MCrypt::New) {
     if (!info.IsConstructCall()) {
         Local<Value> argv[] = {info[0], info[1]};
         Local<Function> cons = Nan::New<Function>(constructor);
-        return info.GetReturnValue().Set(Nan::NewInstance(cons, 2, argv).ToLocalChecked());
+        Nan::MaybeLocal<Object> instance = Nan::NewInstance(cons, 2, argv);
+
+        // empty when the constructor threw. the exception is already set
+        if (instance.IsEmpty()) {
+            return;
+        }
+
+        return info.GetReturnValue().Set(instance.ToLocalChecked());
     }
 
     if (info.Length() < 2) {
-        Nan::ThrowTypeError("Missing parameters. Algorithm and mode should be specified.");
+        return Nan::ThrowTypeError("Missing parameters. Algorithm and mode should be specified.");
     }
 
     MCrypt* mcrypt = new MCrypt(info);
 
-    MCRYPT_MODULE_ERROR_CHECK(mcrypt)
+    if (mcrypt->mcrypt_ == MCRYPT_FAILED) {
+        delete mcrypt;
+        return Nan::ThrowError("MCrypt module could not open");
+    }
 
     mcrypt->Wrap(info.This());
 
@@ -118,7 +124,7 @@ NAN_METHOD(MCrypt::New) {
 NAN_METHOD(MCrypt::Open) {
 
     if (info.Length() < 1) {
-        Nan::ThrowTypeError("Missing parameter. Key should be specified.");
+        return Nan::ThrowTypeError("Missing parameter. Key should be specified.");
     }
 
     MCrypt* mcrypt = ObjectWrap::Unwrap<MCrypt>(info.This());
@@ -135,7 +141,7 @@ NAN_METHOD(MCrypt::Open) {
         mcrypt->key = std::string(node::Buffer::Data(info[0]), node::Buffer::Length(info[0]));
 
     } else {
-        Nan::ThrowTypeError("Key has got incorrect type. Should be Buffer or String.");
+        return Nan::ThrowTypeError("Key has got incorrect type. Should be Buffer or String.");
     }
 
 
@@ -169,7 +175,7 @@ NAN_METHOD(MCrypt::Open) {
             std::string error = serror.str();
 
             if (invalid) {
-                Nan::ThrowTypeError(error.c_str());
+                return Nan::ThrowTypeError(error.c_str());
             }
         }
     }
@@ -192,12 +198,12 @@ NAN_METHOD(MCrypt::Open) {
         ivLen = node::Buffer::Length(info[1]);
         mcrypt->iv = std::string(node::Buffer::Data(info[1]), ivLen);
     } else {
-        Nan::ThrowTypeError("Iv has got incorrect type. Should be Buffer or String.");
+        return Nan::ThrowTypeError("Iv has got incorrect type. Should be Buffer or String.");
     }
 
     if (mcrypt->checkIvSize) {
         if ((size_t)mcrypt_enc_get_iv_size(mcrypt->mcrypt_) != ivLen) {
-            Nan::ThrowTypeError("Invalid iv size. You can determine iv size using getIvSize()");
+            return Nan::ThrowTypeError("Invalid iv size. You can determine iv size using getIvSize()");
         }
     }
 
@@ -212,7 +218,7 @@ static void freeCipherText(char *cipherText, void *hint) {
 NAN_METHOD(MCrypt::Encrypt) {
 
     if (info.Length() < 1) {
-        Nan::ThrowTypeError("Missing parameter. Plaintext should be specified.");
+        return Nan::ThrowTypeError("Missing parameter. Plaintext should be specified.");
     }
 
     MCrypt* mcrypt = ObjectWrap::Unwrap<MCrypt>(info.This());
@@ -235,13 +241,13 @@ NAN_METHOD(MCrypt::Encrypt) {
         cipherText = mcrypt->transform<mcrypt_generic>(node::Buffer::Data(info[0]), &length, &result);
 
     } else {
-        Nan::ThrowTypeError("Plaintext has got incorrect type. Should be Buffer or String.");
+        return Nan::ThrowTypeError("Plaintext has got incorrect type. Should be Buffer or String.");
     }
 
     if (result != 0) {
         const char* error = mcrypt_strerror(result);
         delete[] cipherText;
-        Nan::ThrowError(error);
+        return Nan::ThrowError(error);
     }
 
     return info.GetReturnValue().Set(Nan::NewBuffer(cipherText, length, freeCipherText, 0).ToLocalChecked());
@@ -250,7 +256,7 @@ NAN_METHOD(MCrypt::Encrypt) {
 NAN_METHOD(MCrypt::Decrypt) {
 
     if (info.Length() < 1) {
-        Nan::ThrowTypeError("Missing parameter. Plaintext should be specified.");
+        return Nan::ThrowTypeError("Missing parameter. Ciphertext should be specified.");
     }
 
     MCrypt* mcrypt = ObjectWrap::Unwrap<MCrypt>(info.This());
@@ -272,13 +278,13 @@ NAN_METHOD(MCrypt::Decrypt) {
         cipherText = mcrypt->transform<mdecrypt_generic>(node::Buffer::Data(info[0]), &length, &result);
 
     } else {
-        Nan::ThrowTypeError("Ciphertext has got incorrect type. Should be Buffer or String.");
+        return Nan::ThrowTypeError("Ciphertext has got incorrect type. Should be Buffer or String.");
     }
 
     if (result != 0) {
         const char* error = mcrypt_strerror(result);
         delete[] cipherText;
-        Nan::ThrowError(error);
+        return Nan::ThrowError(error);
     }
 
     return info.GetReturnValue().Set(Nan::NewBuffer(cipherText, length, freeCipherText, 0).ToLocalChecked());
@@ -430,7 +436,11 @@ NAN_METHOD(MCrypt::GetAlgorithmName) {
     MCRYPT_MODULE_ERROR_CHECK(mcrypt)
 
     char* name = mcrypt_enc_get_algorithms_name(mcrypt->mcrypt_);
-    return info.GetReturnValue().Set(Nan::New<String>(name).ToLocalChecked());
+    Local<String> value = Nan::New<String>(name).ToLocalChecked();
+
+    mcrypt_free(name);
+
+    return info.GetReturnValue().Set(value);
 }
 
 NAN_METHOD(MCrypt::GetModeName) {
@@ -440,7 +450,11 @@ NAN_METHOD(MCrypt::GetModeName) {
     MCRYPT_MODULE_ERROR_CHECK(mcrypt)
 
     char* name = mcrypt_enc_get_modes_name(mcrypt->mcrypt_);
-    return info.GetReturnValue().Set(Nan::New<String>(name).ToLocalChecked());
+    Local<String> value = Nan::New<String>(name).ToLocalChecked();
+
+    mcrypt_free(name);
+
+    return info.GetReturnValue().Set(value);
 }
 
 NAN_METHOD(MCrypt::GetAlgorithmNames) {

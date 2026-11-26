@@ -71,6 +71,8 @@ There are some prototype functions to make cipher decipher operations and to ide
 We are need to `open()` with a key for `decrypt()` and `encrypt()` operations also we should set an iv if required by algorithm in other case `iv` is optional parameter.
 `key` and `iv` should be string or Buffer
 
+If the mode uses an iv and `open()` gets none, an iv of zero bytes is used.
+
 ```javascript
 var MCrypt = require('mcrypt').MCrypt;
 
@@ -147,7 +149,7 @@ mc.open('typeconfig.sys^_-');
 ```
 
 #### validateIvSize(Boolean)
-`validateIvSize()` is a function to disable or enable iv size validation on `open()`
+`validateIvSize()` is a function to disable or enable iv size validation on `open()`. With the validation disabled, an iv that is shorter than the iv size is filled up with zero bytes, and of a longer one the first bytes are used.
 
 ```javascript
 var mc = new MCrypt('rijndael-256', 'cbc');

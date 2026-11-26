@@ -11,7 +11,7 @@
 
 #define MCRYPT_MODULE_ERROR_CHECK(mcrypt) \
     if (mcrypt->mcrypt_ == MCRYPT_FAILED) { \
-        Nan::ThrowError("MCrypt module could not open"); \
+        return Nan::ThrowError("MCrypt module could not open"); \
     }
 
 using namespace v8;
