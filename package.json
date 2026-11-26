@@ -27,8 +27,7 @@
     "nan": "^2.14.0"
   },
   "devDependencies": {
-    "mocha": "^2.3.3",
-    "node-gyp": "^3.6.2"
+    "mocha": "^2.3.3"
   },
   "main": "index.js",
   "gypfile": true
