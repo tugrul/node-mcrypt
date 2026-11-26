@@ -1,0 +1,70 @@
+
+name: Build & Test
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      # One platform failing should not hide the result on the others.
+      fail-fast: false
+      matrix:
+        # The release lines of Node that still receive patches.
+        node-version: [22.x, 24.x, 26.x]
+        # The addon and libmcrypt are compiled on the user's machine, so the
+        # compiler differs per platform.
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    name: node ${{ matrix.node-version }} on ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        # libmcrypt is a submodule. Without it there is nothing to compile.
+        submodules: true
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v6
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    # The node-gyp that npm bundles varies by Node release: 22 ships 11, which
+    # does not know Visual Studio 2026 and so cannot find the compiler on the
+    # Windows runners. Installing without scripts and calling the pinned
+    # devDependency makes the toolchain the same on every matrix entry.
+    - name: Install dependencies without building
+      run: npm ci --ignore-scripts
+    - name: Compile the addon with the pinned node-gyp
+      run: npx node-gyp rebuild
+    - name: Run tests
+      run: npm test
+
+  # What gets published is a tarball, and the libmcrypt sources have to be in
+  # it. This installs that tarball the way a user would and uses the result.
+  package:
+
+    runs-on: ubuntu-latest
+
+    name: install the packed tarball
+
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        submodules: true
+    - uses: actions/setup-node@v6
+      with:
+        node-version: 24.x
+    - name: Pack, install in an empty project and encrypt
+      run: |
+        npm pack --pack-destination "$RUNNER_TEMP"
+        mkdir "$RUNNER_TEMP/consumer"
+        cd "$RUNNER_TEMP/consumer"
+        npm init -y > /dev/null
+        npm install ../mcrypt-*.tgz
+        node -e "var m = require('mcrypt'); var c = new m.MCrypt('rijndael-128', 'cbc'); c.open('0123456789abcdef', c.generateIv()); if (!c.selfTest() || c.decrypt(c.encrypt('ok')).toString('utf8', 0, 2) !== 'ok') process.exit(1); console.log('the installed package works')"

@@ -1,0 +1,39 @@
+name: Publish Package to NPM
+on:
+  release:
+    types: [ published ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          # The package ships the libmcrypt sources, and they are a submodule.
+          submodules: true
+      # Setup .npmrc file to publish to npm
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24.x'
+          registry-url: 'https://registry.npmjs.org'
+      - run: npm ci --ignore-scripts
+      - run: npx node-gyp rebuild
+      - run: npm test
+      # A package without the libmcrypt sources would install and then fail to
+      # compile on every machine, and a published version cannot be replaced.
+      # So the tarball is installed the way a user would before it goes out.
+      - name: Pack, install in an empty project and encrypt
+        run: |
+          npm pack --pack-destination "$RUNNER_TEMP"
+          mkdir "$RUNNER_TEMP/consumer"
+          cd "$RUNNER_TEMP/consumer"
+          npm init -y > /dev/null
+          npm install ../mcrypt-*.tgz
+          node -e "var m = require('mcrypt'); var c = new m.MCrypt('rijndael-128', 'cbc'); c.open('0123456789abcdef', c.generateIv()); if (!c.selfTest() || c.decrypt(c.encrypt('ok')).toString('utf8', 0, 2) !== 'ok') process.exit(1); console.log('the installed package works')"
+      - run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
