@@ -1,6 +1,6 @@
 {
   "name": "mcrypt",
-  "version": "0.1.17",
+  "version": "0.2.0",
   "description": "MCrypt bindings",
   "keywords": [
     "mcrypt",
@@ -14,7 +14,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tugrul/node-mcrypt.git"
+    "url": "git+https://github.com/tugrul/node-mcrypt.git"
   },
   "scripts": {
     "test": "mocha"

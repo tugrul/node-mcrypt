@@ -2,7 +2,7 @@
 __This repository not in active maintain state. Please use [cryptian](https://github.com/tugrul/cryptian) library instead of this library.__
 
 
-# node-mcrypt 
+# node-mcrypt [![Build & Test](https://github.com/tugrul/node-mcrypt/actions/workflows/build-test.yml/badge.svg)](https://github.com/tugrul/node-mcrypt/actions/workflows/build-test.yml)
 
 MCrypt bindings for Node.js
 
