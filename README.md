@@ -120,7 +120,9 @@ this is top secret message!
 
 #### generateIv() : Buffer
 
-`generateIv()` function generates IV randomly.
+`generateIv()` returns a random IV of the size that the algorithm and mode need. The bytes come from `crypto.randomBytes()`.
+
+Versions 0.0.3 to 0.1.17 took them from the C library's `rand()` and never seeded it, so a process normally got the same IVs, in the same order, as every other process. Treat IVs that came from `generateIv()` of those versions as predictable, and as repeated wherever two processes used the same key.
 
 ```javascript
 var MCrypt = require('mcrypt').MCrypt;

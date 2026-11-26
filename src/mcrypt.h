@@ -48,7 +48,6 @@ class MCrypt : public node::ObjectWrap {
         static NAN_METHOD(HasIv);
         static NAN_METHOD(GetAlgorithmName);
         static NAN_METHOD(GetModeName);
-        static NAN_METHOD(GenerateIv);
         static NAN_METHOD(Close);
 
         static NAN_METHOD(GetAlgorithmNames);
