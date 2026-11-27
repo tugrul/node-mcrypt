@@ -52,13 +52,27 @@ jobs:
     - name: Run tests
       run: npm test
 
-  # What gets published is a tarball, and the libmcrypt sources have to be in
-  # it. This installs that tarball the way a user would and uses the result.
+  # What users run is "npm install mcrypt": npm unpacks the tarball and builds
+  # it with the node-gyp that it brings along, not the one pinned above. This
+  # does the same with the tarball of this commit. It also catches a tarball
+  # that lacks the libmcrypt sources.
   package:
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
 
-    name: install the packed tarball
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [22.x, 24.x, 26.x]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        exclude:
+          # npm in Node 22 brings node-gyp 11, which does not know Visual
+          # Studio 2026, the only one on the Windows runners. Nothing in this
+          # package can change that.
+          - node-version: 22.x
+            os: windows-latest
+
+    name: npm install on node ${{ matrix.node-version }}, ${{ matrix.os }}
 
     steps:
     - uses: actions/checkout@v6
@@ -66,12 +80,29 @@ jobs:
         submodules: true
     - uses: actions/setup-node@v6
       with:
-        node-version: 24.x
+        node-version: ${{ matrix.node-version }}
+    # For the log: the settings of this Node that reach an addon build, and
+    # the node-gyp that npm will use. See the comment in binding.gyp.
+    - name: Show how this Node was built
+      shell: bash
+      run: |
+        node -e "
+          var v = process.config.variables, path = require('path'), dir = path.dirname(process.execPath);
+          console.log(process.version + ': clang ' + v.clang + ', enable_lto ' + v.enable_lto + ', enable_thin_lto ' + v.enable_thin_lto + ', lto_jobs ' + JSON.stringify(v.lto_jobs));
+          try {
+            var npm = [path.join(dir, '..', 'lib', 'node_modules', 'npm'), path.join(dir, 'node_modules', 'npm')];
+            console.log('node-gyp of npm: ' + require(require.resolve('node-gyp/package.json', {paths: npm})).version);
+          } catch (e) {
+            console.log('node-gyp of npm: not found');
+          }
+        "
     - name: Pack, install in an empty project and encrypt
+      shell: bash
       run: |
         npm pack --pack-destination "$RUNNER_TEMP"
-        mkdir "$RUNNER_TEMP/consumer"
-        cd "$RUNNER_TEMP/consumer"
+        cd "$RUNNER_TEMP"
+        mkdir consumer
+        cd consumer
         npm init -y > /dev/null
         npm install ../mcrypt-*.tgz
         node -e "var m = require('mcrypt'); var c = new m.MCrypt('rijndael-128', 'cbc'); c.open('0123456789abcdef', c.generateIv()); if (!c.selfTest() || c.decrypt(c.encrypt('ok')).toString('utf8', 0, 2) !== 'ok') process.exit(1); console.log('the installed package works')"
