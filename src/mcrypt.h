@@ -16,7 +16,11 @@
 
 using namespace v8;
 
-class MCrypt : public node::ObjectWrap {
+// Nan::ObjectWrap, not node::ObjectWrap: in Node 24.19.0 to 24.21.0 the
+// destructor of node::ObjectWrap removes a cleanup hook in a way that needs
+// a current context, and the garbage collector runs it without one. Node
+// then aborts the process. The wrapper of nan has no such hook.
+class MCrypt : public Nan::ObjectWrap {
     public:
         static void Init(Local<Object> exports);
     

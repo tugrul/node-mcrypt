@@ -21,6 +21,13 @@ jobs:
         # The addon and libmcrypt are compiled on the user's machine, so the
         # compiler differs per platform.
         os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          # Node 24.19.0 to 24.21.0 abort the process when an object whose
+          # class extends node::ObjectWrap is garbage collected. The addon
+          # extends Nan::ObjectWrap because of that, and test/gc.js collects
+          # its objects. Only on one of those releases can that test fail.
+          - node-version: 24.21.0
+            os: ubuntu-latest
 
     name: node ${{ matrix.node-version }} on ${{ matrix.os }}
 

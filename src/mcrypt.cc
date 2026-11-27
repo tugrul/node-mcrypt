@@ -127,7 +127,7 @@ NAN_METHOD(MCrypt::Open) {
         return Nan::ThrowTypeError("Missing parameter. Key should be specified.");
     }
 
-    MCrypt* mcrypt = ObjectWrap::Unwrap<MCrypt>(info.This());
+    MCrypt* mcrypt = Nan::ObjectWrap::Unwrap<MCrypt>(info.This());
 
     MCRYPT_MODULE_ERROR_CHECK(mcrypt)
 
@@ -221,7 +221,7 @@ NAN_METHOD(MCrypt::Encrypt) {
         return Nan::ThrowTypeError("Missing parameter. Plaintext should be specified.");
     }
 
-    MCrypt* mcrypt = ObjectWrap::Unwrap<MCrypt>(info.This());
+    MCrypt* mcrypt = Nan::ObjectWrap::Unwrap<MCrypt>(info.This());
 
     MCRYPT_MODULE_ERROR_CHECK(mcrypt)
 
@@ -259,7 +259,7 @@ NAN_METHOD(MCrypt::Decrypt) {
         return Nan::ThrowTypeError("Missing parameter. Ciphertext should be specified.");
     }
 
-    MCrypt* mcrypt = ObjectWrap::Unwrap<MCrypt>(info.This());
+    MCrypt* mcrypt = Nan::ObjectWrap::Unwrap<MCrypt>(info.This());
 
     MCRYPT_MODULE_ERROR_CHECK(mcrypt)
 
@@ -296,7 +296,7 @@ NAN_METHOD(MCrypt::ValidateKeySize) {
         return info.GetReturnValue().SetUndefined();
     }
 
-    MCrypt* mcrypt = ObjectWrap::Unwrap<MCrypt>(info.This());
+    MCrypt* mcrypt = Nan::ObjectWrap::Unwrap<MCrypt>(info.This());
     mcrypt->checkKeySize = Nan::Equals(info[0], Nan::True()).FromJust();
 
     return info.GetReturnValue().SetUndefined();
@@ -308,7 +308,7 @@ NAN_METHOD(MCrypt::ValidateIvSize) {
         return info.GetReturnValue().SetUndefined();
     }
 
-    MCrypt* mcrypt = ObjectWrap::Unwrap<MCrypt>(info.This());
+    MCrypt* mcrypt = Nan::ObjectWrap::Unwrap<MCrypt>(info.This());
     mcrypt->checkIvSize = Nan::Equals(info[0], Nan::True()).FromJust();
 
     return info.GetReturnValue().SetUndefined();
@@ -316,7 +316,7 @@ NAN_METHOD(MCrypt::ValidateIvSize) {
 
 NAN_METHOD(MCrypt::SelfTest) {
 
-    MCrypt* mcrypt = ObjectWrap::Unwrap<MCrypt>(info.This());
+    MCrypt* mcrypt = Nan::ObjectWrap::Unwrap<MCrypt>(info.This());
 
     MCRYPT_MODULE_ERROR_CHECK(mcrypt)
 
@@ -329,7 +329,7 @@ NAN_METHOD(MCrypt::SelfTest) {
 
 NAN_METHOD(MCrypt::IsBlockAlgorithmMode) {
 
-    MCrypt* mcrypt = ObjectWrap::Unwrap<MCrypt>(info.This());
+    MCrypt* mcrypt = Nan::ObjectWrap::Unwrap<MCrypt>(info.This());
 
     MCRYPT_MODULE_ERROR_CHECK(mcrypt)
 
@@ -342,7 +342,7 @@ NAN_METHOD(MCrypt::IsBlockAlgorithmMode) {
 
 NAN_METHOD(MCrypt::IsBlockAlgorithm) {
 
-    MCrypt* mcrypt = ObjectWrap::Unwrap<MCrypt>(info.This());
+    MCrypt* mcrypt = Nan::ObjectWrap::Unwrap<MCrypt>(info.This());
 
     MCRYPT_MODULE_ERROR_CHECK(mcrypt)
 
@@ -355,7 +355,7 @@ NAN_METHOD(MCrypt::IsBlockAlgorithm) {
 
 NAN_METHOD(MCrypt::IsBlockMode) {
 
-    MCrypt* mcrypt = ObjectWrap::Unwrap<MCrypt>(info.This());
+    MCrypt* mcrypt = Nan::ObjectWrap::Unwrap<MCrypt>(info.This());
 
     MCRYPT_MODULE_ERROR_CHECK(mcrypt)
 
@@ -368,7 +368,7 @@ NAN_METHOD(MCrypt::IsBlockMode) {
 
 NAN_METHOD(MCrypt::GetBlockSize) {
 
-    MCrypt* mcrypt = ObjectWrap::Unwrap<MCrypt>(info.This());
+    MCrypt* mcrypt = Nan::ObjectWrap::Unwrap<MCrypt>(info.This());
 
     MCRYPT_MODULE_ERROR_CHECK(mcrypt)
 
@@ -379,7 +379,7 @@ NAN_METHOD(MCrypt::GetBlockSize) {
 
 NAN_METHOD(MCrypt::GetKeySize) {
 
-    MCrypt* mcrypt = ObjectWrap::Unwrap<MCrypt>(info.This());
+    MCrypt* mcrypt = Nan::ObjectWrap::Unwrap<MCrypt>(info.This());
 
     MCRYPT_MODULE_ERROR_CHECK(mcrypt)
 
@@ -390,7 +390,7 @@ NAN_METHOD(MCrypt::GetKeySize) {
 
 NAN_METHOD(MCrypt::GetSupportedKeySizes) {
 
-    MCrypt* mcrypt = ObjectWrap::Unwrap<MCrypt>(info.This());
+    MCrypt* mcrypt = Nan::ObjectWrap::Unwrap<MCrypt>(info.This());
 
     MCRYPT_MODULE_ERROR_CHECK(mcrypt)
 
@@ -407,7 +407,7 @@ NAN_METHOD(MCrypt::GetSupportedKeySizes) {
 
 NAN_METHOD(MCrypt::GetIvSize) {
 
-    MCrypt* mcrypt = ObjectWrap::Unwrap<MCrypt>(info.This());
+    MCrypt* mcrypt = Nan::ObjectWrap::Unwrap<MCrypt>(info.This());
 
     MCRYPT_MODULE_ERROR_CHECK(mcrypt)
 
@@ -418,7 +418,7 @@ NAN_METHOD(MCrypt::GetIvSize) {
 
 NAN_METHOD(MCrypt::HasIv) {
 
-    MCrypt* mcrypt = ObjectWrap::Unwrap<MCrypt>(info.This());
+    MCrypt* mcrypt = Nan::ObjectWrap::Unwrap<MCrypt>(info.This());
 
     MCRYPT_MODULE_ERROR_CHECK(mcrypt)
 
@@ -431,7 +431,7 @@ NAN_METHOD(MCrypt::HasIv) {
 
 NAN_METHOD(MCrypt::GetAlgorithmName) {
 
-    MCrypt* mcrypt = ObjectWrap::Unwrap<MCrypt>(info.This());
+    MCrypt* mcrypt = Nan::ObjectWrap::Unwrap<MCrypt>(info.This());
 
     MCRYPT_MODULE_ERROR_CHECK(mcrypt)
 
@@ -445,7 +445,7 @@ NAN_METHOD(MCrypt::GetAlgorithmName) {
 
 NAN_METHOD(MCrypt::GetModeName) {
 
-    MCrypt* mcrypt = ObjectWrap::Unwrap<MCrypt>(info.This());
+    MCrypt* mcrypt = Nan::ObjectWrap::Unwrap<MCrypt>(info.This());
 
     MCRYPT_MODULE_ERROR_CHECK(mcrypt)
 
